@@ -1,9 +1,11 @@
 import json
+import json
 import random
 from datetime import date
 from email_validator import validate_email, EmailNotValidError
 
 class User():
+    def __init__(self, first_name, last_name, personal_id, phone_number, email, password) -> None:
     def __init__(self, first_name, last_name, personal_id, phone_number, email, password) -> None:
         self.first_name = first_name
         self.last_name = last_name
@@ -19,20 +21,32 @@ class User():
     def create_bank_account(self):
         if not Validation.is_valid_name_surname(self.first_name):
             return "Oops! It seems like the first name you entered doesn't meet our requirements. Please try a different username."
+            return "Oops! It seems like the first name you entered doesn't meet our requirements. Please try a different username."
         
         if not Validation.is_valid_name_surname(self.last_name):
+            return "Oops! It seems like the last name you entered doesn't meet our requirements. Please try a different username."
             return "Oops! It seems like the last name you entered doesn't meet our requirements. Please try a different username."
         
         if not Validation.is_valid_email(self.email):
             return "Oops! It seems the email you entered is invalid. Please double-check and try again."
+            return "Oops! It seems the email you entered is invalid. Please double-check and try again."
         
         if not Validation.is_valid_personal_id(self.personal_id):
+            return "Oops! It seems the personal ID you entered is invalid. Please double-check and try again."
             return "Oops! It seems the personal ID you entered is invalid. Please double-check and try again."
         
         if not Validation.is_valid_phone_number(self.phone_number):
             return "Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again."
+            return "Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again."
         
         if not Validation.is_valid_password(self.password):
+            return "Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again."
+        
+        data = JsonFileTasks(self.file_path).load_data()
+        
+        if self.personal_id in data:
+            return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
+        
             return "Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again."
         
         data = JsonFileTasks(self.file_path).load_data()
@@ -70,10 +84,14 @@ class Validation():
     
     def is_valid_email(email):
         try:
+            # Validate.
             valid = validate_email(email)
+            # Update with the normalized form.
             email = valid.email
             return True
         except EmailNotValidError as e:
+            print(str(e))
+            # Email is not valid, exception message is human-readable
             print(str(e))
             return False
         
@@ -160,6 +178,12 @@ class JsonFileTasks():
                 return data
         except FileNotFoundError:
             return {}
+        try:
+            with open(self.file_path, "r") as accounts_data:
+                data = json.load(accounts_data)
+                return data
+        except FileNotFoundError:
+            return {}
     
     def save_data(self):
         pass
@@ -167,5 +191,7 @@ class JsonFileTasks():
     def update_data(self):
         pass
     
+user = User("giorgi", "chkhikvadze", "61808021325", "597008144", "cpmgeoo@gmail.com", "asdfg123")
+print(user.create_bank_account())
 user = User("giorgi", "chkhikvadze", "61808021325", "597008144", "cpmgeoo@gmail.com", "asdfg123")
 print(user.create_bank_account())
