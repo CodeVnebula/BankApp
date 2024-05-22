@@ -57,3 +57,18 @@
             ფაილის წაკითხვის,
             მონაცემების შენახვის,
             მონაცემების განახლების
+
+            მონაცემების სავარაუდო სახე:
+                {
+                    personal_id : {
+                        "first_name" : first_name,
+                        "last_name" : last_name,
+                        "phone_number" : phone_number,
+                        "email" : email,
+                        "password" : password, (converted)
+                        "pin_code" : pin_code,
+                        "account_number" : account_number,
+                        "account_creation_date" : account_creation_date
+                    }
+
+                }
