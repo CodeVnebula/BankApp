@@ -20,23 +20,29 @@ class User():
     
     def create_bank_account(self):
         if not Validation.is_valid_name_surname(self.first_name):
-            return "Oops! It seems like the first name you entered doesn't meet our requirements. Please try a different username."
-        
+            print("Oops! It seems like the first name you entered doesn't meet our requirements. Please try a valid first name.")
+            return False
+
         if not Validation.is_valid_name_surname(self.last_name):
-            return "Oops! It seems like the last name you entered doesn't meet our requirements. Please try a different username."
+            print("Oops! It seems like the last name you entered doesn't meet our requirements. Please try a valid last name.")
+            return False
         
         if not Validation.is_valid_email(self.email):
-            return "Oops! It seems the email you entered is invalid. Please double-check and try again."
+            print("Oops! It seems the email you entered is invalid. Please double-check and try again.")
+            return False
         
         if not Validation.is_valid_personal_id(self.personal_id):
-            return "Oops! It seems the personal ID you entered is invalid. Please double-check and try again."
+            print("Oops! It seems the personal ID you entered is invalid. Please double-check and try again.")
+            return False
         
         if not Validation.is_valid_phone_number(self.phone_number):
-            return "Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again."
+            print("Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again.")
+            return False
         
         if not Validation.is_valid_password(self.password):
-            return "Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again."
-        
+            print("Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again.")
+            return False
+
         data = JsonFileTasks(self.file_path).load_data()
         
         if len(data) == 0:
@@ -54,14 +60,17 @@ class User():
             
         else:
             if self.personal_id in data:
-                return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
+                print("Oops! It seems the personal ID you entered or already registered. Please double-check and try again.")
+                return False
             
             for info in data.values():
                 if info["email"] == self.email:
-                    return "Opps! It seems the email you entered is already registered. Please double-check and try again."
+                    print("Opps! It seems the email you entered is already registered. Please double-check and try again.")
+                    return False
             
                 if info["phone_number"] == self.phone_number:
-                    return "Opps! It seems the phone number you entered is already registered. Please double-check and try again."
+                    print("Opps! It seems the phone number you entered is already registered. Please double-check and try again.")
+                    return False
             
             for info in data.values():
                 if info["account_number"] != self.account_number:
@@ -96,7 +105,65 @@ class User():
     def hash_password(self, password):
         # sha256 function for hashing input, func returns str
         return hashlib.sha256(password.encode()).hexdigest()
+ 
+
+    def get_user_details(self):
+        return {
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'phone': self.phone,
+            'email': self.email,
+            'account_number': self.account_number
+        }
+
+class Account():
+    def __init__(self, account_number) -> None:
+        self.account_number = account_number
+        self.account_history_file_path = "Data/accounts_history.json"
+        self.data_file_path = "Data/accountsData.json"
+        self.data = JsonFileTasks(self.data_file_path).load_data()
+        
+        
+    def get_personal_id_by_account_number(self):
+        if Validation.is_valid_account_number(self.account_number):
+            for personal_id, details in self.data.items():
+                if details["account_number"] == self.account_number:
+                    return personal_id
+            return None
+
+        return False
     
+    
+    def fill_balance(self, amount):
+        personal_id = self.get_personal_id_by_account_number()
+        if personal_id == False:
+            return False
+        
+        if amount < 0:
+            print("Insufficient funds")
+            return False
+        
+        self.data[personal_id]["balance"] += amount
+        filling_message = f"Balance was filled with {amount}$, Account - {self.account_number}, {Functionalities.current_date()}."
+        
+        history = JsonFileTasks(self.account_history_file_path).load_data()
+
+        
+        
+        if self.account_number not in history:
+            history[self.account_number] = {
+                "balance_filling_history" : [filling_message],
+                "transaction_history" : []
+            }
+        
+        else:
+            filling_history = history[self.account_number]["balance_filling_history"]
+            filling_history.append(filling_message)
+        
+        JsonFileTasks(self.account_history_file_path).save_data(history)
+        JsonFileTasks(self.data_file_path).save_data(self.data)
+        
+            
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
@@ -174,6 +241,13 @@ class Validation():
         return True
         
 
+    def is_valid_account_number(account_number):
+        users = JsonFileTasks(User('','','','','','',).file_path).load_data()
+        for user in users.values():
+            if account_number == user["account_number"]:
+                return True
+        return False
+
 class Functionalities():
     
     def generate_account_number():
@@ -207,7 +281,7 @@ class Functionalities():
   
   
     def generate_pin_code():
-        return str(random.randint(0, 9999))
+        return str(random.randint(1000, 9999))
       
       
     def current_date():
@@ -237,3 +311,6 @@ class JsonFileTasks():
 user = User("giorgi", "chkhikvadze", "12345678910", "123456789", "cpmgeoo@gmail.com", "1234567")
 # user.create_bank_account()
 # print(user.login_veirfication( "cpmgeoo@gmail.com", "1234567"))
+
+account = Account("GE61GB4923ME9308D55")
+print(account.fill_balance(50))
