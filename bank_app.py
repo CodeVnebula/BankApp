@@ -107,14 +107,14 @@ class User():
         return hashlib.sha256(password.encode()).hexdigest()
  
 
-    def get_user_details(self):
-        return {
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'phone': self.phone,
-            'email': self.email,
-            'account_number': self.account_number
-        }
+    def get_user_details(self, email):
+        data = JsonFileTasks(self.file_path).load_data()
+
+        for personal_id, details in data.items():
+            if details["email"] == email:
+                personal_info = data[personal_id]
+    
+        return personal_info
 
 class Account():
     def __init__(self, account_number) -> None:
@@ -131,12 +131,13 @@ class Account():
                     return personal_id
             return None
 
-        return False
+        
     
     
-    def fill_balance(self, amount):
+    def deposit(self, amount):
         personal_id = self.get_personal_id_by_account_number()
         if personal_id == False:
+            print("PIE")
             return False
         
         if amount < 0:
@@ -162,6 +163,8 @@ class Account():
         
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
+        
+        return filling_message
         
             
 class Validation():
@@ -308,9 +311,9 @@ class JsonFileTasks():
     def update_data(self):
         pass
     
-user = User("giorgi", "chkhikvadze", "12345678910", "123456789", "cpmgeoo@gmail.com", "1234567")
+# user = User("giorgi", "chkhikvadze", "12345678910", "123456789", "cpmgeoo@gmail.com", "1234567")
 # user.create_bank_account()
 # print(user.login_veirfication( "cpmgeoo@gmail.com", "1234567"))
 
-account = Account("GE61GB4923ME9308D55")
-print(account.fill_balance(50))
+# account = Account("GE61GB4923ME9308D55")
+# print(account.deposit(50))

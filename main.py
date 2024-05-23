@@ -1,4 +1,4 @@
-from bank_app import User
+from bank_app import User, Account
 from os import system
 
 def main():
@@ -52,8 +52,15 @@ def main():
                     
                     choice = input("\n>> ")
                     
+                    account_number = user.get_user_details(email)["account_number"]
+                    account = Account(account_number)
+                    
                     if choice == "1":
-                        pass    
+                        amount = float(input("Amount to deposit: "))
+                        result = account.deposit(amount)
+                        
+                        print(result)
+                        break
                     
                     elif choice == "2":
                         pass
