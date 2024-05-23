@@ -38,15 +38,49 @@ class User():
         
         data = JsonFileTasks(self.file_path).load_data()
         
-        if self.personal_id in data:
-            return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
-                
-        data = JsonFileTasks(self.file_path).load_data()
-        
-        if self.personal_id in data:
-            return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
-        
+        if len(data) == 0:
+            data[self.personal_id] = {
+                "first_name" : self.first_name,
+                "last_name" : self.last_name,
+                "phone_number" : self.phone_number,
+                "email" : self.email,
+                "password" : self.password,
+                "pin_code" : self.pin_code,
+                "account_number" : self.account_number,
+                "account_creation_date" : str(self.account_creation_date)
+            }
+        else:
+            if self.personal_id in data:
+                return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
+            
+            for info in data.values():
+                if info["email"] == self.email:
+                    return "Opps! It seems the email you entered is already registered. Please double-check and try again."
+            
+                if info["phone_number"] == self.phone_number:
+                    return "Opps! It seems the phone number you entered is already registered. Please double-check and try again."
+            
+            for info in data.values():
+                if info["account_number"] != self.account_number:
+                    break
+                else:
+                    self.account_number = Functionalities.generate_account_number()
+            
+            data[self.personal_id] = {
+                "first_name" : self.first_name,
+                "last_name" : self.last_name,
+                "phone_number" : self.phone_number,
+                "email" : self.email,
+                "password" : self.password,
+                "pin_code" : self.pin_code,
+                "account_number" : self.account_number,
+                "account_creation_date" : str(self.account_creation_date)
+            } 
 
+        
+        JsonFileTasks(self.file_path).save_data(data)
+        return self.pin_code, self.account_number
+        
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
@@ -172,11 +206,12 @@ class JsonFileTasks():
             return {}
         
     
-    def save_data(self):
-        pass
+    def save_data(self, data):
+        with open(self.file_path, "w") as file:
+            json.dump(data, file, indent=4)
     
     def update_data(self):
         pass
     
-user = User("giorgi", "chkhikvadze", "61808021325", "597008144", "cpmgeoo@gmail.com", "asdfg123")
+user = User("giorgi", "chkhikvadze", "61908021325", "53008144", "cpmeoo@gmail.com", "asdfg123")
 print(user.create_bank_account())
