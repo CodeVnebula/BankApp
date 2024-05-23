@@ -1,6 +1,7 @@
 import json
 import json
 import random
+import hashlib
 from datetime import date
 from email_validator import validate_email, EmailNotValidError
 
@@ -44,11 +45,13 @@ class User():
                 "last_name" : self.last_name,
                 "phone_number" : self.phone_number,
                 "email" : self.email,
-                "password" : self.password,
+                "password" : self.hash_password(self.password),
                 "pin_code" : self.pin_code,
                 "account_number" : self.account_number,
-                "account_creation_date" : str(self.account_creation_date)
+                "account_creation_date" : str(self.account_creation_date),
+                "balance" : 0.0
             }
+            
         else:
             if self.personal_id in data:
                 return "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
@@ -71,16 +74,29 @@ class User():
                 "last_name" : self.last_name,
                 "phone_number" : self.phone_number,
                 "email" : self.email,
-                "password" : self.password,
+                "password" : self.hash_password(self.password),
                 "pin_code" : self.pin_code,
                 "account_number" : self.account_number,
-                "account_creation_date" : str(self.account_creation_date)
+                "account_creation_date" : str(self.account_creation_date),
+                "balance" : 0.0
             } 
 
-        
         JsonFileTasks(self.file_path).save_data(data)
         return self.pin_code, self.account_number
-        
+     
+       
+    def login_veirfication(self, email, password):
+        users = JsonFileTasks(self.file_path).load_data()
+        for user in users.values():
+            if user['email'] == email and user['password'] == self.hash_password(password):
+                return True
+        return False
+    
+   
+    def hash_password(self, password):
+        # sha256 function for hashing input, func returns str
+        return hashlib.sha256(password.encode()).hexdigest()
+    
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
@@ -167,6 +183,10 @@ class Functionalities():
         
         account_number = ""
         bank_code = "GB"
+        country_code = "GE"
+        
+        first_two_digits = random.randint(0, 99)
+        first_two_digits = "0" * (2 - len(str(first_two_digits))) + str(first_two_digits)
         
         first_four_digits = random.randint(0, 9999)
         first_four_digits = "0" * (4 - len(str(first_four_digits))) + str(first_four_digits)
@@ -181,7 +201,7 @@ class Functionalities():
         last_two_digits = random.randint(0, 99)
         last_two_digits = "0" * (2 - len(str(last_two_digits))) + str(last_two_digits)
         
-        account_number = bank_code + first_four_digits + first_two_chars + second_four_digits + one_char + last_two_digits
+        account_number = country_code + first_two_digits + bank_code + first_four_digits + first_two_chars + second_four_digits + one_char + last_two_digits
         
         return account_number
   
@@ -192,6 +212,7 @@ class Functionalities():
       
     def current_date():
         return date.today()
+     
      
 class JsonFileTasks():
     def __init__(self, file_path) -> None:
@@ -213,5 +234,6 @@ class JsonFileTasks():
     def update_data(self):
         pass
     
-user = User("giorgi", "chkhikvadze", "61908021325", "53008144", "cpmeoo@gmail.com", "asdfg123")
-print(user.create_bank_account())
+user = User("giorgi", "chkhikvadze", "12345678910", "123456789", "cpmgeoo@gmail.com", "1234567")
+# user.create_bank_account()
+# print(user.login_veirfication( "cpmgeoo@gmail.com", "1234567"))
