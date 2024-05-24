@@ -55,7 +55,8 @@ class User():
                 "pin_code" : self.pin_code,
                 "account_number" : self.account_number,
                 "account_creation_date" : str(self.account_creation_date),
-                "balance" : 0.0
+                "balance" : 0.0,
+                "withdrawal_disabled_date" : ""
             }
             
         else:
@@ -87,7 +88,8 @@ class User():
                 "pin_code" : self.pin_code,
                 "account_number" : self.account_number,
                 "account_creation_date" : str(self.account_creation_date),
-                "balance" : 0.0
+                "balance" : 0.0,
+                "withdrawal_disabled_date" : ""
             } 
 
         JsonFileTasks(self.file_path).save_data(data)
@@ -116,13 +118,14 @@ class User():
     
         return personal_info
 
+
 class Account():
     def __init__(self, account_number) -> None:
         self.account_number = account_number
         self.account_history_file_path = "Data/accounts_history.json"
         self.data_file_path = "Data/accountsData.json"
         self.data = JsonFileTasks(self.data_file_path).load_data()
-        
+        self.number_of_tries = 0
         
     def get_personal_id_by_account_number(self):
         if Validation.is_valid_account_number(self.account_number):
@@ -140,7 +143,7 @@ class Account():
             print("PIE")
             return False
         
-        if amount < 0:
+        if amount <= 0:
             print("Insufficient funds")
             return False
         
@@ -149,12 +152,11 @@ class Account():
         
         history = JsonFileTasks(self.account_history_file_path).load_data()
 
-        
-        
         if self.account_number not in history:
             history[self.account_number] = {
                 "balance_filling_history" : [filling_message],
-                "transaction_history" : []
+                "transaction_history" : [],
+                "withdrawal_history" : []
             }
         
         else:
@@ -166,7 +168,42 @@ class Account():
         
         return filling_message
         
+        
+    def withdraw(self, amount, inputted_pin_code):
+        print(self.number_of_tries)
+        
+        personal_id = self.get_personal_id_by_account_number()
+        if not personal_id:
+            print("pID-Err")
+            return False
+        
+        if self.data[personal_id]["withdrawal_disabled_date"] == str(Functionalities.current_date()):
+            print("It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!")
+            return False
+        
+        pin_code = self.data[personal_id]["pin_code"]
+        
+        if pin_code != inputted_pin_code:
+            if self.number_of_tries == 3:
+                self.data[personal_id]["withdrawal_disabled_date"] = str(Functionalities.current_date())
+                JsonFileTasks(self.data_file_path).save_data(self.data)
+                print("It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!")
+                return False
             
+            self.number_of_tries += 1
+            print("It seems pin code you have entered does not match your pin code. Please double-check and try again.")
+            
+            return False
+        
+        balance = self.data[personal_id]["balance"]
+        
+        if amount > balance:
+            print("Insufficient funds")
+            return False
+        
+        balance -= amount
+        withdrawal_history = f"Amount withdrawn from the account {amount} "
+        
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
@@ -317,3 +354,8 @@ class JsonFileTasks():
 
 # account = Account("GE61GB4923ME9308D55")
 # print(account.deposit(50))
+
+acc = Account("GE61GB4923ME9308D55")
+while True:
+    pin = input("> ")
+    acc.withdraw(10, pin)
