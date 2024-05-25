@@ -56,14 +56,29 @@ def main():
                     account = Account(account_number)
                     
                     if choice == "1":
-                        amount = float(input("Amount to deposit: "))
-                        result = account.deposit(amount)
-                        
-                        print(result)
+                        while True:
+                            amount = float(input("Amount to deposit: "))
+                            
+                            result = account.deposit(amount)
+                            
+                            if result != False:
+                                # print(result)
+                                print("Successfull deposit!")
+                                break
                         break
-                    
+                
                     elif choice == "2":
-                        pass
+                        while True:
+                            amount = float(input("Amount to withdraw: "))
+                            pin_code = input("Pin code: ")
+                            
+                            result = account.withdraw(amount=amount, inputted_pin_code=pin_code)
+                            
+                            if result != False:
+                                # print(result)
+                                print("Successfull withdrawal!")
+                                break
+                        break
                     
                     elif choice == "3":
                         pass
