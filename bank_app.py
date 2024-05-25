@@ -180,6 +180,9 @@ class Account():
         if self.data[personal_id]["withdrawal_disabled_date"] == str(Functionalities.current_date()):
             print("It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!")
             return False
+        else:
+            self.data[personal_id]["withdrawal_disabled_date"] = ""
+            JsonFileTasks(self.data_file_path).save_data(self.data)
         
         pin_code = self.data[personal_id]["pin_code"]
         
@@ -192,7 +195,6 @@ class Account():
             
             self.number_of_tries += 1
             print("It seems pin code you have entered does not match your pin code. Please double-check and try again.")
-            
             return False
         
         balance = self.data[personal_id]["balance"]
@@ -202,7 +204,28 @@ class Account():
             return False
         
         balance -= amount
-        withdrawal_history = f"Amount withdrawn from the account {amount} "
+        self.data[personal_id]["balance"] = balance
+        
+        withdrawal_message = f"Amount withdrawn from the account {amount}$, Account - {self.account_number}, {Functionalities.current_date()}."
+        
+        history = JsonFileTasks(self.account_history_file_path).load_data()
+        
+        if self.account_number not in history:
+            history[self.account_number] = {
+                "balance_filling_history" : [],
+                "transaction_history" : [],
+                "withdrawal_history" : [withdrawal_message]
+            }
+        
+        else:
+            withdrawal_history = history[self.account_number]["withdrawal_history"]
+            withdrawal_history.append(withdrawal_message)
+        
+        JsonFileTasks(self.account_history_file_path).save_data(history)
+        JsonFileTasks(self.data_file_path).save_data(self.data)
+        
+        return withdrawal_message
+        
         
 class Validation():
     
@@ -356,6 +379,6 @@ class JsonFileTasks():
 # print(account.deposit(50))
 
 acc = Account("GE61GB4923ME9308D55")
-while True:
-    pin = input("> ")
-    acc.withdraw(10, pin)
+
+pin = input("> ")
+print(acc.withdraw(10, pin))
