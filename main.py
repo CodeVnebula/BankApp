@@ -1,5 +1,6 @@
-from bank_app import User, Account
+from bank_app import User, Account, Loan
 from os import system
+
 
 def get_details(data):
     print("_____________ Account Details _____________\n")
@@ -22,6 +23,7 @@ def display_history(history_data, hist_of = ""):
             print(f"   - {hist_element}")
         
     print()
+    
     
 def main():
     print("\n_________________ Bank App _________________\n")
@@ -165,9 +167,20 @@ def main():
                             else:
                                 print("It seems like you have entered wrong option. Please double-check and try again.")
                         
-                            
-                    
                     elif choice == "7":
+                        print("_______________ Loan _______________\n")
+
+                        amount = float(input("Loan amount: "))
+                        time_period = int(input("Time period 'months', min-6 months, max-48:"))
+                        
+                        loan = Loan(amount=amount, account_number=account_number, time_period=time_period)
+                        
+                        res = loan.set_up_loan_details()
+                        print("succ")
+                        print(res)
+                        
+                        
+                    elif choice == "8":
                         pass
                     
                     else:

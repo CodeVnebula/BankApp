@@ -2,7 +2,7 @@ import json
 import json
 import random
 import hashlib
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from email_validator import validate_email, EmailNotValidError
 
 class User():
@@ -304,6 +304,77 @@ class Account():
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
         return account_history[self.account_number]["withdrawal_history"]
       
+      
+class Loan():
+    def __init__(self, amount, account_number, time_period) -> None:
+        self.annual_interest_rate = 0.08    # 8%
+        self.amount = amount
+        self.account_number = account_number
+        self.time_period = time_period
+        self.loan_data_file_path = "Data/loan_data.json"
+        self.data_file_path = "Data/accountsData.json"
+        self.history_file_path = "Data/accounts_history.json"
+        
+    
+    def interest_rate(self):
+        if (self.amount <= 0 or self.amount > 100000) or (self.time_period < 6 or self.time_period > 48):
+            return False
+        
+        return self.amount * self.annual_interest_rate * (self.time_period / 12)
+    
+    
+    def set_up_loan_details(self):
+        loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
+        
+        if self.account_number in loan_data and loan_data["loan_status"] == True:
+            print("It seems you have already got an active loan. Please finish it to be able to take a new loan.")
+            return False
+        
+        interest_rate = self.interest_rate()
+        
+        if interest_rate == False:
+            print("It seems details you have entered are wrong! Plase double-check ad try again.")
+            return False
+        
+        account_dets = JsonFileTasks(self.data_file_path).load_data()
+        history = JsonFileTasks(self.history_file_path).load_data()
+       
+        personal_id = Account(self.account_number).get_personal_id_by_account_number(self.account_number)
+        
+        account_dets[personal_id]["balance"] += self.amount
+              
+        current_date = Functionalities.current_date()
+        last_date = Functionalities.add_months(current_date, self.time_period)
+        
+        total_repayment = self.amount + interest_rate
+        total_repayment = "{:.2f}".format(total_repayment)
+       
+        min_monthly_payment = float(total_repayment) / self.time_period
+        min_monthly_payment = "{:.2f}".format(min_monthly_payment)
+        
+        loan_message = f"Balance was filled By GB Bank, Account: {self.account_number}. Amount - {self.amount}, {current_date}. (loan)"
+        history[self.account_number]["balance_filling_history"].append(loan_message)
+        
+        loan_data[self.account_number] = {
+            "loan_approved_date" : str(current_date) + " 00:00:00",
+            "loan_expires_date" : str(last_date),
+            "time_period" : self.time_period,
+            "amount_borrowed" : self.amount,
+            "total_repayment" : total_repayment,
+            "interest_rate" : interest_rate,
+            "min_monthly_payment" : min_monthly_payment,
+            "loan_status" : True
+        }
+        
+        JsonFileTasks(self.data_file_path).save_data(account_dets)
+        JsonFileTasks(self.history_file_path).save_data(history)
+        JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
+        
+        return loan_data
+        
+        
+
+
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
@@ -436,6 +507,22 @@ class Functionalities():
         sec = current.second
 
         return f"{hour}:{minute}:{sec}"
+    
+
+    def add_months(date, months):
+        new_month = date.month + months
+        new_year = date.year + new_month // 12
+        new_month = new_month % 12
+
+        if new_month == 0:
+            new_month = 12
+            new_year -= 1
+
+        last_day_of_new_month = (datetime(new_year, new_month + 1, 1) - timedelta(days=1)).day
+        new_day = min(date.day, last_day_of_new_month)
+
+        return datetime(new_year, new_month, new_day)
+
      
      
 class JsonFileTasks():
