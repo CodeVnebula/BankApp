@@ -2,7 +2,7 @@ import json
 import json
 import random
 import hashlib
-from datetime import date
+from datetime import date, datetime
 from email_validator import validate_email, EmailNotValidError
 
 class User():
@@ -145,7 +145,7 @@ class Account():
             return False
         
         self.data[personal_id]["balance"] += amount
-        filling_message = f"Balance was filled with {amount}$, Account - {self.account_number}, {Functionalities.current_date()}."
+        filling_message = f"Balance was filled with {amount}$, Account - {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}."
         
         history = JsonFileTasks(self.account_history_file_path).load_data()
 
@@ -203,7 +203,7 @@ class Account():
         balance -= amount
         self.data[personal_id]["balance"] = balance
         
-        withdrawal_message = f"Amount withdrawn from the account {amount}$, Account - {self.account_number}, {Functionalities.current_date()}."
+        withdrawal_message = f"Amount withdrawn from the account {amount}$, Account - {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}."
         
         history = JsonFileTasks(self.account_history_file_path).load_data()
         
@@ -225,6 +225,10 @@ class Account():
     
     
     def transfer(self, amount, account_number_to):
+        if account_number_to == self.account_number:
+            print("It seems like account number you entered is your account. Please double-check and try again.")
+            return False
+            
         personal_id_acc_from = self.get_personal_id_by_account_number(self.account_number)
         personal_id_acc_to = self.get_personal_id_by_account_number(account_number_to)
         
@@ -246,8 +250,8 @@ class Account():
             print("Insufficient funds")
             return False
         
-        transfer_message_acc_to = f"Balance was filled with {amount}$, Account - {account_number_to}, from {self.account_number}, {Functionalities.current_date()}. Sender: {self.data[personal_id_acc_from]["last_name"]} {self.data[personal_id_acc_from]["first_name"]}"
-        transfer_message_acc_from = f"Transfer from {self.account_number} to {account_number_to}, Amount: {amount}$, {Functionalities.current_date()}. Recipient: {self.data[personal_id_acc_to]["last_name"]} {self.data[personal_id_acc_to]["first_name"]}"
+        transfer_message_acc_to = f"Balance was filled with {amount}$, Account - {account_number_to}, from {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}. Sender: {self.data[personal_id_acc_from]["last_name"]} {self.data[personal_id_acc_from]["first_name"]}"
+        transfer_message_acc_from = f"Transfer from {self.account_number} to {account_number_to}, Amount: {amount}$, {Functionalities.current_date()}/{Functionalities.current_time()}. Recipient: {self.data[personal_id_acc_to]["last_name"]} {self.data[personal_id_acc_to]["first_name"]}"
         
         balance_account_number_from -= amount
         balance_account_number_to += amount
@@ -408,6 +412,16 @@ class Functionalities():
       
     def current_date():
         return date.today()
+    
+    
+    def current_time():
+        current = datetime.now()
+
+        hour = current.hour
+        minute = current.minute
+        sec = current.second
+
+        return f"{hour}:{minute}:{sec}"
      
      
 class JsonFileTasks():
@@ -435,10 +449,10 @@ class JsonFileTasks():
 # print(user.login_veirfication( "cpmgeoo@gmail.com", "1234567"))
 
 # account = Account("GE61GB4923ME9308D55")
-# print(account.deposit(50))
+# # print(account.deposit(50))
 
-acc = Account("GE61GB4923ME9308D55")
+# acc = Account("GE61GB4923ME9308D55")
 
-amt = float(input("> "))
+# amt = float(input("> "))
 
-print(acc.transfer(amt, "GE86GB9379HX4572L69"))
+# print(acc.transfer(amt, "GE86GB9379HX4572L69"))
