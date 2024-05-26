@@ -1,6 +1,28 @@
 from bank_app import User, Account
 from os import system
 
+def get_details(data):
+    print("_____________ Account Details _____________\n")
+    print(f"Account: {data["account_number"]} \nPin-code - {data["pin_code"]}\n")
+    
+    print("User details: ")
+    print(f"    - {data["first_name"]} {data["last_name"]}")
+    print("Contact:")
+    print(f"  Email - {data["email"]}")
+    print(f"  Phone - {data["phone_number"]}")
+    print(f"Account has been created since: {data["account_creation_date"]}")
+    
+    
+def display_history(history_data, hist_of = ""):
+    if not history_data:
+        print(f"   - {hist_of} history is empty!")
+    
+    else:
+        for hist_element in history_data:
+            print(f"   - {hist_element}")
+        
+    print()
+    
 def main():
     print("\n_________________ Bank App _________________\n")
     while True:
@@ -46,9 +68,10 @@ def main():
                     print("2. Withdraw")
                     print("3. Transfer")
                     print("4. Check Balance")
-                    print("5. Transaction History")
-                    print("6. Apply for Loan")
-                    print("7. Logout")
+                    print("5. Account details")
+                    print("6. Account history")
+                    print("7. Apply for Loan")
+                    print("8. Logout")
                     
                     choice = input("\n>> ")
                     
@@ -81,16 +104,68 @@ def main():
                         break
                     
                     elif choice == "3":
-                        pass
+                        while True:
+                            print("Transfering by account number: ")
+                            
+                            account_number_to = input("Account number to transfer: ")
+                            amount = float(input("Amount to transfer: "))
                     
+                            result = account.transfer(amount=amount, account_number_to=account_number_to)
+                            
+                            if result != False:
+                                print(result)
+                                print("Succ")
+                                break
+                        break
+                            
                     elif choice == "4":
-                        pass
+                        balance = user.get_user_details(email)["balance"]
+                        print("____________ Balance ____________")
+                        print(f"Account: {account_number}")
+                        print(f"Avilable balance: {balance}$")
+                        break
                     
                     elif choice == "5":
-                        pass
+                        data = user.get_user_details(email)
+                        get_details(data)
+                        break
                     
                     elif choice == "6":
-                        pass
+                        print("___________ Account History ___________\n")
+                        
+                        print("1. View Balance filling history")
+                        print("2. View Transaction history")
+                        print("3. View Withdrawal history")
+                        print("4. Quit")
+                        
+                        while True:
+                            hist_choice = input(">> ")
+
+                            if hist_choice == '1':
+                                filling_history = account.get_balance_filling_history()
+                                
+                                print("______ Balance Filling History ______")
+                                display_history(filling_history, "Balance filling")
+                            
+                            elif hist_choice == '2':
+                                transaction_history = account.get_transaction_history()
+                                
+                                print("______ Transaction History ______")
+                                display_history(transaction_history, "Transaction")
+                            
+                            elif hist_choice == '3':
+                                withdrawal_history = account.get_withdrawal_history()
+                                
+                                print("______ Withdrawal History ______")
+                                display_history(withdrawal_history, "Withdrawal")
+                            
+                            elif hist_choice == "4":
+                                break
+                                
+                            else:
+                                print("It seems like you have entered wrong option. Please double-check and try again.")
+                        
+                            
                     
                     elif choice == "7":
                         pass

@@ -288,8 +288,22 @@ class Account():
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
         return transfer_message_acc_from, transfer_message_acc_to
-        
-        
+    
+    
+    def get_transaction_history(self):
+        account_history = JsonFileTasks(self.account_history_file_path).load_data()
+        return account_history[self.account_number]["transaction_history"]
+    
+    
+    def get_balance_filling_history(self):
+        account_history = JsonFileTasks(self.account_history_file_path).load_data()
+        return account_history[self.account_number]["balance_filling_history"]
+    
+    
+    def get_withdrawal_history(self):
+        account_history = JsonFileTasks(self.account_history_file_path).load_data()
+        return account_history[self.account_number]["withdrawal_history"]
+      
 class Validation():
     
     def is_valid_name_surname(name_or_surname: str) -> bool:
