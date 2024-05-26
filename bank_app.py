@@ -127,18 +127,15 @@ class Account():
         self.data = JsonFileTasks(self.data_file_path).load_data()
         self.number_of_tries = 0
         
-    def get_personal_id_by_account_number(self):
-        if Validation.is_valid_account_number(self.account_number):
+    def get_personal_id_by_account_number(self, acc_number):
+        if Validation.is_valid_account_number(acc_number):
             for personal_id, details in self.data.items():
-                if details["account_number"] == self.account_number:
+                if details["account_number"] == acc_number:
                     return personal_id
             return None
 
-        
-    
-    
     def deposit(self, amount):
-        personal_id = self.get_personal_id_by_account_number()
+        personal_id = self.get_personal_id_by_account_number(self.account_number)
         if personal_id == False:
             print("PIE")
             return False
@@ -172,7 +169,7 @@ class Account():
     def withdraw(self, amount, inputted_pin_code):
         print(self.number_of_tries)
         
-        personal_id = self.get_personal_id_by_account_number()
+        personal_id = self.get_personal_id_by_account_number(self.account_number)
         if not personal_id:
             print("pID-Err")
             return False
@@ -225,6 +222,68 @@ class Account():
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
         return withdrawal_message
+    
+    
+    def transfer(self, amount, account_number_to):
+        personal_id_acc_from = self.get_personal_id_by_account_number(self.account_number)
+        personal_id_acc_to = self.get_personal_id_by_account_number(account_number_to)
+        
+        print(personal_id_acc_from)
+        print(personal_id_acc_to)
+        
+        if not personal_id_acc_from:
+            print("Error")
+            return False
+        
+        if not personal_id_acc_to:
+            print("Error, finding account number to")
+            return False
+        
+        balance_account_number_from = self.data[personal_id_acc_from]["balance"]
+        balance_account_number_to = self.data[personal_id_acc_to]["balance"]
+        
+        if amount > balance_account_number_from:
+            print("Insufficient funds")
+            return False
+        
+        transfer_message_acc_to = f"Balance was filled with {amount}$, Account - {account_number_to}, from {self.account_number}, {Functionalities.current_date()}. Sender: {self.data[personal_id_acc_from]["last_name"]} {self.data[personal_id_acc_from]["first_name"]}"
+        transfer_message_acc_from = f"Transfer from {self.account_number} to {account_number_to}, Amount: {amount}$, {Functionalities.current_date()}. Recipient: {self.data[personal_id_acc_to]["last_name"]} {self.data[personal_id_acc_to]["first_name"]}"
+        
+        balance_account_number_from -= amount
+        balance_account_number_to += amount
+        
+        self.data[personal_id_acc_from]["balance"] = balance_account_number_from
+        self.data[personal_id_acc_to]["balance"] = balance_account_number_to
+        
+        history = JsonFileTasks(self.account_history_file_path).load_data()
+        
+        if self.account_number not in history:
+            history[self.account_number] = {
+                "balance_filling_history" : [],
+                "transaction_history" : [transfer_message_acc_from],
+                "withdrawal_history" : []
+            }
+        
+        else:
+            transaction_history = history[self.account_number]["transaction_history"]
+            transaction_history.append(transfer_message_acc_from)
+        
+        
+        if account_number_to not in history:
+            history[account_number_to] = {
+                "balance_filling_history" : [],
+                "transaction_history" : [transfer_message_acc_to],
+                "withdrawal_history" : []
+            }
+        
+        else:
+            transaction_history = history[account_number_to]["transaction_history"]
+            transaction_history.append(transfer_message_acc_to)
+            
+        JsonFileTasks(self.account_history_file_path).save_data(history)
+        JsonFileTasks(self.data_file_path).save_data(self.data)
+        
+        return transfer_message_acc_from, transfer_message_acc_to
         
         
 class Validation():
@@ -380,5 +439,6 @@ class JsonFileTasks():
 
 acc = Account("GE61GB4923ME9308D55")
 
-pin = input("> ")
-print(acc.withdraw(10, pin))
+amt = float(input("> "))
+
+print(acc.transfer(amt, "GE86GB9379HX4572L69"))
