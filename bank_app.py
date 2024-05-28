@@ -1,10 +1,81 @@
 import json
-import json
 import random
 import hashlib
 from datetime import date, datetime, timedelta
 from email_validator import validate_email, EmailNotValidError
+from email.message import EmailMessage
+import ssl
+import smtplib
 
+class Email():
+    def __init__(self, email_account_to) -> None:
+        self.bank_email, self.password = self.get_bank_email()
+        self.email_account_to = email_account_to
+
+    
+    def send_email(self, subject, email_body):
+        if not Validation.is_valid_email(self.email_account_to):
+            print("Oops! It seems the email you entered is invalid. Please double-check and try again.")
+            return False
+        
+        email = EmailMessage()
+
+        email["From"] = self.bank_email
+        email["To"] = self.email_account_to
+        email["Subject"] = subject
+        email.set_content(email_body)
+
+        context = ssl.create_default_context()
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+                smtp.login(self.bank_email, self.password)
+                smtp.sendmail(self.bank_email, self.email_account_to, email.as_string())
+                return True
+        except smtplib.SMTPAuthenticationError as e:
+            print("Failed to authenticate with the SMTP server:", e)
+            return False
+        except smtplib.SMTPRecipientsRefused as e:
+            print("All recipient addresses were refused:", e)
+            return False
+        except smtplib.SMTPSenderRefused as e:
+            print("The sender address was refused:", e)
+            return False
+        except smtplib.SMTPDataError as e:
+            print("The SMTP server replied with an unexpected error code:", e)
+            return False
+        except smtplib.SMTPConnectError as e:
+            print("Failed to connect to the SMTP server:", e)
+            return False
+        except smtplib.SMTPHeloError as e:
+            print("The server refused our HELO message:", e)
+            return False
+        except smtplib.SMTPNotSupportedError as e:
+            print("The SMTP server does not support the STARTTLS extension:", e)
+            return False
+        except smtplib.SMTPException as e:
+            print("An error occurred during the SMTP transaction:", e)
+            return False
+        except Exception as e:
+            print("An unexpected error occurred:", e)
+            return False
+
+    @staticmethod
+    def get_bank_email():
+        try:
+            with open("bank_email_and_passcode.txt", "r") as bank_email:
+                email, password = bank_email.readlines()
+                return email, password
+        except FileNotFoundError as e:
+            print("Couldn't find the bank email information", e)
+            return None, None   
+    
+    
+    @staticmethod
+    def verification_code():
+        return str(random.randint(100000, 999999))
+    
+    
+    
 class User():
     def __init__(self, first_name, last_name, personal_id, phone_number, email, password) -> None:
         self.first_name = first_name
@@ -372,8 +443,8 @@ class Loan():
         
         return loan_data
         
-        
-
+    
+    
 
 class Validation():
     
@@ -459,6 +530,7 @@ class Validation():
                 return True
         return False
 
+
 class Functionalities():
     
     def generate_account_number():
@@ -522,8 +594,7 @@ class Functionalities():
         new_day = min(date.day, last_day_of_new_month)
 
         return datetime(new_year, new_month, new_day)
-
-     
+  
      
 class JsonFileTasks():
     def __init__(self, file_path) -> None:
@@ -541,19 +612,3 @@ class JsonFileTasks():
     def save_data(self, data):
         with open(self.file_path, "w") as file:
             json.dump(data, file, indent=4)
-    
-    def update_data(self):
-        pass
-    
-# user = User("giorgi", "chkhikvadze", "12345678910", "123456789", "cpmgeoo@gmail.com", "1234567")
-# user.create_bank_account()
-# print(user.login_veirfication( "cpmgeoo@gmail.com", "1234567"))
-
-# account = Account("GE61GB4923ME9308D55")
-# # print(account.deposit(50))
-
-# acc = Account("GE61GB4923ME9308D55")
-
-# amt = float(input("> "))
-
-# print(acc.transfer(amt, "GE86GB9379HX4572L69"))
