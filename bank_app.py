@@ -3,7 +3,8 @@ import random
 import hashlib
 from datetime import date, datetime, timedelta
 from email_validator import validate_email, EmailNotValidError
-from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import ssl
 import smtplib
 
@@ -11,19 +12,19 @@ class Email():
     def __init__(self, email_account_to) -> None:
         self.bank_email, self.password = self.get_bank_email()
         self.email_account_to = email_account_to
-
+        
     
     def send_email(self, subject, email_body):
         if not Validation.is_valid_email(self.email_account_to):
             print("Oops! It seems the email you entered is invalid. Please double-check and try again.")
             return False
         
-        email = EmailMessage()
-
+        email = MIMEMultipart()
         email["From"] = self.bank_email
         email["To"] = self.email_account_to
         email["Subject"] = subject
-        email.set_content(email_body)
+        
+        email.attach(MIMEText(email_body, "plain"))
 
         context = ssl.create_default_context()
         try:
@@ -481,9 +482,6 @@ class Validation():
             email = valid.email
             return True
         except EmailNotValidError as e:
-            print(str(e))
-            # Email is not valid, exception message is human-readable
-            print(str(e))
             return False
         
 

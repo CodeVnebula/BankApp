@@ -1,5 +1,6 @@
-from bank_app import User, Account, Loan
+from bank_app import User, Account, Loan, Email
 from os import system
+import textwrap
 
 
 def get_details(data):
@@ -45,16 +46,61 @@ def main():
                 email = input("Email: ")
                 password = input("Password: ")
                 
+                em = Email(email_account_to=email)
+                verification_code = em.verification_code()
+                
+                # print(verification_code)
+                
+                body = f"{verification_code} is your GB bank verification code."
+
+                print(f"To make sure {email} belongs to you, we sent 6 digit verification code to the email...")
+                
+                sent = em.send_email("Verification code", body)
+                
+                if sent == True:
+                    print(f"Enter 6 digit code we sent to you on email: {email}.")
+                    user_input = input(">> ")
+                    
+                    if str(user_input) != str(verification_code):
+                        print("Unsuccessfull verification. Make sure you have entered code correctly!")
+                        break
+                else:
+                    break
+                    
+                print("Verified successfully!")
+
                 user = User(first_name=first_name, last_name=last_name, personal_id=personal_id, 
                             phone_number=phone_number, email=email, password=password)
+                
                 
                 result = user.create_bank_account()
                 if result is not False:
                     pin_code, account_number = result
                     print(f"Congratulations {first_name} your bank account has been Successfully created!")
                     print(f"    - Account number: {account_number}\n    - Pin code: {pin_code}")
+                    
+                    subject = "Account created"
+                    account_created_message = textwrap.dedent(f"""
+                        - Hello {first_name} your bank account has been successfully created!
+                        Account details:
+                        - Account number: {account_number}.
+                        - Pin code: {pin_code}.
+                        Please keep this information secure and do not share your PIN code with 
+                        anyone.
+                        Thank you for choosing our bank. We are excited to have you with us and 
+                        look forward to serving you!
+                        Best regards,
+                        Your Bank Team
+                    """)
+                    
+                    sent_created_message = em.send_email(subject, account_created_message)
+                    
+                    if sent_created_message == True:
+                        break
+                    
+                else:
                     break
-        
+                
         elif your_choice == "2":
             print("\n___________ Login ___________\n")
             
