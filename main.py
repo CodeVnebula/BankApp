@@ -72,7 +72,6 @@ def main():
                 user = User(first_name=first_name, last_name=last_name, personal_id=personal_id, 
                             phone_number=phone_number, email=email, password=password)
                 
-                
                 result = user.create_bank_account()
                 if result is not False:
                     pin_code, account_number = result
@@ -84,7 +83,7 @@ def main():
                         - Hello {first_name} your bank account has been successfully created!
                         Account details:
                         - Account number: {account_number}.
-                        - Pin code: {pin_code}.
+                        - PIN code: {pin_code}.
                         Please keep this information secure and do not share your PIN code with 
                         anyone.
                         Thank you for choosing our bank. We are excited to have you with us and 
@@ -133,7 +132,6 @@ def main():
                             result = account.deposit(amount)
                             
                             if result != False:
-                                # print(result)
                                 print("Successfull deposit!")
                                 break
                         break
@@ -146,7 +144,6 @@ def main():
                             result = account.withdraw(amount=amount, inputted_pin_code=pin_code)
                             
                             if result != False:
-                                # print(result)
                                 print("Successfull withdrawal!")
                                 break
                         break
@@ -161,8 +158,7 @@ def main():
                             result = account.transfer(amount=amount, account_number_to=account_number_to)
                             
                             if result != False:
-                                print(result)
-                                print("Succ")
+                                print("Successfull transaction!")
                                 break
                         break
                             

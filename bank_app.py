@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import ssl
 import smtplib
+import textwrap
 
 class Email():
     def __init__(self, email_account_to) -> None:
@@ -191,6 +192,8 @@ class User():
         return personal_info
 
 
+
+
 class Account():
     def __init__(self, account_number) -> None:
         self.account_number = account_number
@@ -231,6 +234,20 @@ class Account():
         else:
             filling_history = history[self.account_number]["balance_filling_history"]
             filling_history.append(filling_message)
+            
+        email_account = self.data[personal_id]["email"]    
+        
+        email = Email(email_account)
+        
+        subject = "Balance was filled"
+        body = textwrap.dedent(f"""
+            Balance was filled with {amount}$, 
+            Account - {self.account_number},
+            Date: {Functionalities.current_date()}
+            Time: {Functionalities.current_time()}
+        """)
+        
+        email.send_email(subject, body)
         
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
@@ -289,6 +306,20 @@ class Account():
         else:
             withdrawal_history = history[self.account_number]["withdrawal_history"]
             withdrawal_history.append(withdrawal_message)
+        
+        email_account = self.data[personal_id]["email"]
+        
+        email = Email(email_account)
+        
+        subject = "Withdrawal"
+        body = textwrap.dedent(f"""
+            Amount withdrawn from the account {amount}$, 
+            Account - {self.account_number}, 
+            Date: {Functionalities.current_date()}
+            Time: {Functionalities.current_time()}     
+        """)
+        
+        email.send_email(subject, body)
         
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
@@ -356,6 +387,35 @@ class Account():
             transaction_history = history[account_number_to]["transaction_history"]
             transaction_history.append(transfer_message_acc_to)
             
+        email_account_from = self.data[personal_id_acc_from]["email"]
+        email_account_to = self.data[personal_id_acc_to]["email"]
+        
+        email_acc_from_instance = Email(email_account_from) 
+        email_acc_to_instance = Email(email_account_to)  
+        
+        subject_email_acc_from = "Transaction made"
+        body_email_acc_from = textwrap.dedent(f"""
+            Transfer from {self.account_number} to {account_number_to}, 
+            Amount: {amount}$, 
+            Date: {Functionalities.current_date()}
+            Time: {Functionalities.current_time()}. 
+            Recipient: {self.data[personal_id_acc_to]["last_name"]} {self.data[personal_id_acc_to]["first_name"]}              
+        """) 
+        
+
+        subject_email_acc_to = "Balance was filled"
+        body_email_acc_to = textwrap.dedent(f"""
+            Balance was filled with {amount}$, 
+            Account - {account_number_to}, 
+            from {self.account_number}, 
+            Date: {Functionalities.current_date()}
+            Time: {Functionalities.current_time()}. 
+            Sender: {self.data[personal_id_acc_from]["last_name"]} {self.data[personal_id_acc_from]["first_name"]}
+        """)
+        
+        email_acc_from_instance.send_email(subject_email_acc_from, body_email_acc_from)
+        email_acc_to_instance.send_email(subject_email_acc_to, body_email_acc_to)
+        
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
