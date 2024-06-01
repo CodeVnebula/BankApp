@@ -1,6 +1,7 @@
 from bank_app import User, Account, Loan, Email
 from os import system
 import textwrap
+from time import sleep
 
 
 def get_details(data):
@@ -53,7 +54,7 @@ def main():
                 
                 body = f"{verification_code} is your GB bank verification code."
 
-                print(f"To make sure {email} belongs to you, we sent 6 digit verification code to the email...")
+                print(f"\nTo make sure {email} belongs to you, we will send 6 digit verification code to the email...")
                 
                 sent = em.send_email("Verification code", body)
                 
@@ -65,6 +66,8 @@ def main():
                         print("Unsuccessfull verification. Make sure you have entered code correctly!")
                         break
                 else:
+                    sleep(2)
+                    system("cls")
                     break
                     
                 print("Verified successfully!")
@@ -102,10 +105,67 @@ def main():
                 
         elif your_choice == "2":
             print("\n___________ Login ___________\n")
-            
+            wrong_password_input_count = 0
             while True:
+                
+                if wrong_password_input_count == 3:
+                    print("\nIt seems like you forgot your password. If you're typing wrong email, please make sure")
+                    print("you type it correctly, if you forgot password and want to reset it type 'y', if not type ")
+                    print("'n' and to skip this or type 'q' and quit program")
+                    
+                    while True:
+                        forgot_password = input(">> ").lower()
+                        if forgot_password == 'y':
+                            email_account = input("Enter email: ")
+                            
+                            email = Email(email_account)
+                            
+                            verification_code = email.verification_code()
+                            subject = "Verification code"
+                            body = f"Your password reset verification code is {verification_code}"
+                            
+                            sent = email.send_email(subject=subject, email_body=body)
+                            
+                            if sent:
+                                print("Enter 6 digit verification code that we sent to you")
+                                user_input = input(">> ")
+                                
+                                if user_input == verification_code:
+                                    print("Enter new password: ")
+                                    while True:
+                                        new_password = input(">> ")
+                                    
+                                        user = User("", "", "", "", email_account, password)
+                                    
+                                        result = user.change_password(new_password)
+                                    
+                                        if result:
+                                            print("Password successfully changed!")
+                                            break
+                                        else:
+                                            print("Something went wrong!")
+                                            break
+                                    break
+                                else:
+                                    print("You entered wrong code, Try again later!")
+                                    break
+                            
+                            break
+                                
+                            
+                        elif forgot_password == 'n':
+                            wrong_password_input_count = 0
+                            break
+                        elif forgot_password == 'q':
+                            print("Quiting the system!")
+                            return
+                        else:
+                            print("It seems like you entered wrong option. Please double-check and try again!")
+                
+                    break
+                    
                 email = input("Email: ")
-                password = input("Password: ")
+                password = input("Password: ")     
             
                 user = User('', '', '', '', email, password)
                 if user.login_veirfication(email, password):
@@ -117,8 +177,9 @@ def main():
                     print("4. Check Balance")
                     print("5. Account details")
                     print("6. Account history")
-                    print("7. Apply for Loan")
-                    print("8. Logout")
+                    print("7. Loan options")
+                    print("8. Manage account")
+                    print("9. Logout")
                     
                     choice = input("\n>> ")
                     
@@ -177,12 +238,11 @@ def main():
                     elif choice == "6":
                         print("___________ Account History ___________\n")
                         
-                        print("1. View Balance filling history")
-                        print("2. View Transaction history")
-                        print("3. View Withdrawal history")
-                        print("4. Quit")
-                        
                         while True:
+                            print("1. View Balance filling history")
+                            print("2. View Transaction history")
+                            print("3. View Withdrawal history")
+                            print("4. Quit")
                             hist_choice = input(">> ")
 
                             if hist_choice == '1':
@@ -190,27 +250,35 @@ def main():
                                 
                                 print("______ Balance Filling History ______")
                                 display_history(filling_history, "Balance filling")
+                                break
                             
                             elif hist_choice == '2':
                                 transaction_history = account.get_transaction_history()
                                 
                                 print("______ Transaction History ______")
                                 display_history(transaction_history, "Transaction")
+                                break
                             
                             elif hist_choice == '3':
                                 withdrawal_history = account.get_withdrawal_history()
                                 
                                 print("______ Withdrawal History ______")
                                 display_history(withdrawal_history, "Withdrawal")
+                                break
                             
                             elif hist_choice == "4":
                                 break
                                 
                             else:
                                 print("It seems like you have entered wrong option. Please double-check and try again.")
+                            
                         
                     elif choice == "7":
-                        print("_______________ Loan _______________\n")
+                        print("_______________ Loan Options_______________\n")
+                        print("1. Apply for loan")
+                        print("2. Pay monthly loan")
+                        print("3. Check loan details")
+                        print
 
                         amount = float(input("Loan amount: "))
                         time_period = int(input("Time period 'months', min-6 months, max-48:"))
@@ -221,15 +289,18 @@ def main():
                         print("succ")
                         print(res)
                         
-                        
                     elif choice == "8":
                         pass
+                       
+                    elif choice == "9":
+                        break
                     
                     else:
                         pass
                     
                 else:
                     print("Invalid email or password. Please try again.")
+                    wrong_password_input_count += 1
                 
         
         elif your_choice == "3":
