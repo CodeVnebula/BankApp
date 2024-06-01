@@ -190,6 +190,47 @@ class User():
                 personal_info = data[personal_id]
     
         return personal_info
+    
+    
+    def change_password(self, new_password):
+        if not Validation.is_valid_password(new_password):
+            print("Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again.")
+            return False
+        data = JsonFileTasks(self.file_path).load_data()
+        if Validation.is_valid_email(self.email):
+            for personal_id, details in data.items():
+                    if details["email"] == self.email:
+                        personal_id = personal_id
+                        break
+            data[personal_id]["password"] = self.hash_password(new_password)
+            JsonFileTasks(self.file_path).save_data(data)
+            return True
+        return False
+    
+    
+    def change_pin_code(self, new_pin_code):
+        if len(new_pin_code) != 4:
+            print("PIN code must be 4 digits in length")
+            return False
+
+        for digit in new_pin_code:
+            if digit.is_alpha():
+                print("PIN code must contain only digits")
+                return False
+        
+        data = JsonFileTasks(self.file_path).load_data()
+        if Validation.is_valid_email(self.email):
+            for personal_id, details in data.items():
+                if details["email"] == self.email:
+                    personal_id = personal_id
+                    break
+        
+            data[personal_id]['pin_code'] = new_pin_code
+            JsonFileTasks(self.file_path).save_data(data)
+            return True
+        return False
+        
+        
 
 
 
@@ -504,8 +545,6 @@ class Loan():
         
         return loan_data
         
-    
-    
 
 class Validation():
     
