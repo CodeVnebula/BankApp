@@ -129,7 +129,8 @@ class User():
                 "account_number" : self.account_number,
                 "account_creation_date" : str(self.account_creation_date),
                 "balance" : 0.0,
-                "withdrawal_disabled_date" : ""
+                "withdrawal_disabled_date" : "",
+                "pin_code_changed_manually" : False
             }
             
         else:
@@ -169,7 +170,7 @@ class User():
         return self.pin_code, self.account_number
      
        
-    def login_veirfication(self, email, password):
+    def login_verification(self, email, password):
         users = JsonFileTasks(self.file_path).load_data()
         for user in users.values():
             if user['email'] == email and user['password'] == self.hash_password(password):
@@ -214,11 +215,16 @@ class User():
             return False
 
         for digit in new_pin_code:
-            if digit.is_alpha():
+            if digit.isalpha():
                 print("PIN code must contain only digits")
                 return False
         
         data = JsonFileTasks(self.file_path).load_data()
+        
+        if data[personal_id]["pin_code_changed_manually"] == True:
+            print("You can change PIN code only once!")
+            return False
+        
         if Validation.is_valid_email(self.email):
             for personal_id, details in data.items():
                 if details["email"] == self.email:
@@ -226,13 +232,10 @@ class User():
                     break
         
             data[personal_id]['pin_code'] = new_pin_code
+            data[personal_id]["pin_code_changed_manually"] = True
             JsonFileTasks(self.file_path).save_data(data)
             return True
         return False
-        
-        
-
-
 
 
 class Account():
@@ -251,6 +254,12 @@ class Account():
             return None
 
     def deposit(self, amount):
+        try:
+            amount = float(amount)
+        except ValueError as ve:
+            print("Please enter valid amount, Error Msg:", ve)
+            return False
+            
         personal_id = self.get_personal_id_by_account_number(self.account_number)
         if personal_id == False:
             print("PIE")
@@ -297,7 +306,11 @@ class Account():
         
         
     def withdraw(self, amount, inputted_pin_code):
-        print(self.number_of_tries)
+        try:
+            amount = abs(float(amount))
+        except ValueError as ve:
+            print("Please enter valid amount, Error Msg:", ve)
+            return False
         
         personal_id = self.get_personal_id_by_account_number(self.account_number)
         if not personal_id:
@@ -369,6 +382,12 @@ class Account():
     
     
     def transfer(self, amount, account_number_to):
+        try:
+            amount = abs(float(amount))
+        except ValueError as ve:
+            print("Please enter valid amount, Error Msg:", ve)
+            return False
+        
         if account_number_to == self.account_number:
             print("It seems like account number you entered is your account. Please double-check and try again.")
             return False
@@ -490,6 +509,18 @@ class Loan():
         
     
     def interest_rate(self):
+        try:
+            self.amount = float(self.amount)
+        except ValueError as ve:
+            print("Please enter valid amount, Error Msg:", ve)
+            return False
+        
+        try:
+            self.time_period = int(self.time_period)
+        except ValueError as ve:
+            print("Please enter valid time period, Error Msg:", ve)
+            return False
+        
         if (self.amount <= 0 or self.amount > 100000) or (self.time_period < 6 or self.time_period > 48):
             return False
         
@@ -499,7 +530,7 @@ class Loan():
     def set_up_loan_details(self):
         loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
         
-        if self.account_number in loan_data and loan_data["loan_status"] == True:
+        if self.account_number in loan_data and loan_data[self.account_number]["loan_status"] == True:
             print("It seems you have already got an active loan. Please finish it to be able to take a new loan.")
             return False
         
@@ -544,6 +575,15 @@ class Loan():
         JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
         
         return loan_data
+    
+    
+    def pay_monthly_loan(self):
+        pass
+    
+    
+    def check_loan_details(self):
+        loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
+        return loan_details[self.account_number]
         
 
 class Validation():
