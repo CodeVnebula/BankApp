@@ -8,17 +8,17 @@ from email.mime.multipart import MIMEMultipart
 import ssl
 import smtplib
 import textwrap
+from typing import Tuple
 
 class Email():
-    def __init__(self, email_account_to) -> None:
+    def __init__(self, email_account_to: str) -> None:
         self.bank_email, self.password = self.get_bank_email()
         self.email_account_to = email_account_to
         
     
-    def send_email(self, subject, email_body):
+    def send_email(self, subject: str, email_body: str) -> Tuple[bool, str]:
         if not Validation.is_valid_email(self.email_account_to):
-            print("Oops! It seems the email you entered is invalid. Please double-check and try again.")
-            return False
+            return False, "Oops! It seems the email you entered is invalid. Please double-check and try again."
         
         email = MIMEMultipart()
         email["From"] = self.bank_email
@@ -28,58 +28,50 @@ class Email():
         email.attach(MIMEText(email_body, "plain"))
 
         context = ssl.create_default_context()
+        
         try:
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
                 smtp.login(self.bank_email, self.password)
                 smtp.sendmail(self.bank_email, self.email_account_to, email.as_string())
-                return True
+                return True, "Email sent successfully"
         except smtplib.SMTPAuthenticationError as e:
-            print("Failed to authenticate with the SMTP server:", e)
-            return False
+            return False, "Failed to authenticate with the SMTP server:", e
         except smtplib.SMTPRecipientsRefused as e:
-            print("All recipient addresses were refused:", e)
-            return False
+            return False, "All recipient addresses were refused:", e
         except smtplib.SMTPSenderRefused as e:
-            print("The sender address was refused:", e)
-            return False
+            return False, "The sender address was refused:", e
         except smtplib.SMTPDataError as e:
-            print("The SMTP server replied with an unexpected error code:", e)
-            return False
+            return False, "The SMTP server replied with an unexpected error code:", e
         except smtplib.SMTPConnectError as e:
-            print("Failed to connect to the SMTP server:", e)
-            return False
+            return False, "Failed to connect to the SMTP server:", e
         except smtplib.SMTPHeloError as e:
-            print("The server refused our HELO message:", e)
-            return False
+            return False, "The server refused our HELO message:", e
         except smtplib.SMTPNotSupportedError as e:
-            print("The SMTP server does not support the STARTTLS extension:", e)
-            return False
+            return False, "The SMTP server does not support the STARTTLS extension:", e
         except smtplib.SMTPException as e:
-            print("An error occurred during the SMTP transaction:", e)
-            return False
+            return False, "An error occurred during the SMTP transaction:", e
         except Exception as e:
-            print("An unexpected error occurred:", e)
-            return False
+            return False, "An unexpected error occurred:", e
+
 
     @staticmethod
-    def get_bank_email():
+    def get_bank_email() -> Tuple[str, str] | Tuple[bool, str]:
         try:
             with open("bank_email_and_passcode.txt", "r") as bank_email:
                 email, password = bank_email.readlines()
                 return email, password
         except FileNotFoundError as e:
-            print("Couldn't find the bank email information", e)
-            return None, None   
+            return False, "Couldn't find the bank email information", e
     
     
     @staticmethod
-    def verification_code():
+    def verification_code() -> str:
         return str(random.randint(100000, 999999))
     
     
-    
+
 class User():
-    def __init__(self, first_name, last_name, personal_id, phone_number, email, password) -> None:
+    def __init__(self, first_name: str, last_name: str, personal_id: str, phone_number: str, email: str, password: str) -> None:
         self.first_name = first_name
         self.last_name = last_name
         self.personal_id = personal_id
@@ -91,30 +83,31 @@ class User():
         self.account_creation_date = Functionalities.current_date()
         self.file_path = "Data/accountsData.json"
     
-    def create_bank_account(self):
+    
+    def create_bank_account(self) -> Tuple[bool, str] | Tuple[str, str]:
         if not Validation.is_valid_name_surname(self.first_name):
-            print("Oops! It seems like the first name you entered doesn't meet our requirements. Please try a valid first name.")
-            return False
+            error_message = "Oops! It seems like the first name you entered doesn't meet our requirements. Please try a valid first name."
+            return False, error_message
 
         if not Validation.is_valid_name_surname(self.last_name):
-            print("Oops! It seems like the last name you entered doesn't meet our requirements. Please try a valid last name.")
-            return False
+            error_message = "Oops! It seems like the last name you entered doesn't meet our requirements. Please try a valid last name."
+            return False, error_message
         
         if not Validation.is_valid_email(self.email):
-            print("Oops! It seems the email you entered is invalid. Please double-check and try again.")
-            return False
+            error_message = "Oops! It seems the email you entered is invalid. Please double-check and try again."
+            return False, error_message
         
         if not Validation.is_valid_personal_id(self.personal_id):
-            print("Oops! It seems the personal ID you entered is invalid. Please double-check and try again.")
-            return False
+            error_message = "Oops! It seems the personal ID you entered is invalid. Please double-check and try again."
+            return False, error_message
         
         if not Validation.is_valid_phone_number(self.phone_number):
-            print("Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again.")
-            return False
+            error_message = "Oops! It seems like phone number you entered is invalid or doesn't meet our requirements. Please double-check and try again."
+            return False, error_message
         
         if not Validation.is_valid_password(self.password):
-            print("Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again.")
-            return False
+            error_message = "Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again."
+            return False, error_message
 
         data = JsonFileTasks(self.file_path).load_data()
         
@@ -135,17 +128,17 @@ class User():
             
         else:
             if self.personal_id in data:
-                print("Oops! It seems the personal ID you entered or already registered. Please double-check and try again.")
-                return False
+                error_message = "Oops! It seems the personal ID you entered or already registered. Please double-check and try again."
+                return False, error_message
             
             for info in data.values():
                 if info["email"] == self.email:
-                    print("Opps! It seems the email you entered is already registered. Please double-check and try again.")
-                    return False
+                    error_message = "Opps! It seems the email you entered is already registered. Please double-check and try again."
+                    return False, error_message
             
                 if info["phone_number"] == self.phone_number:
-                    print("Opps! It seems the phone number you entered is already registered. Please double-check and try again.")
-                    return False
+                    error_message = "Opps! It seems the phone number you entered is already registered. Please double-check and try again."
+                    return False, error_message
             
             for info in data.values():
                 if info["account_number"] != self.account_number:
@@ -170,7 +163,7 @@ class User():
         return self.pin_code, self.account_number
      
        
-    def login_verification(self, email, password):
+    def login_verification(self, email: str, password: str) -> bool:
         users = JsonFileTasks(self.file_path).load_data()
         for user in users.values():
             if user['email'] == email and user['password'] == self.hash_password(password):
@@ -178,12 +171,12 @@ class User():
         return False
     
    
-    def hash_password(self, password):
+    def hash_password(self, password: str) -> str:
         # sha256 function for hashing input, func returns str
         return hashlib.sha256(password.encode()).hexdigest()
  
 
-    def get_user_details(self, email):
+    def get_user_details(self, email: str) -> dict:
         data = JsonFileTasks(self.file_path).load_data()
 
         for personal_id, details in data.items():
@@ -193,10 +186,10 @@ class User():
         return personal_info
     
     
-    def change_password(self, new_password):
+    def change_password(self, new_password: str) -> Tuple[bool, str]:
         if not Validation.is_valid_password(new_password):
-            print("Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again.")
-            return False
+            error_message = "Oops! It seems like password you entered doesn't meet our requirements. Please double-check and try again."
+            return False, error_message
         data = JsonFileTasks(self.file_path).load_data()
         if Validation.is_valid_email(self.email):
             for personal_id, details in data.items():
@@ -205,25 +198,25 @@ class User():
                         break
             data[personal_id]["password"] = self.hash_password(new_password)
             JsonFileTasks(self.file_path).save_data(data)
-            return True
-        return False
+            return True, "Password successfully changed"
+        return False, "Something went wrong"
     
     
-    def change_pin_code(self, new_pin_code):
+    def change_pin_code(self, new_pin_code: str) -> Tuple[bool, str]:
         if len(new_pin_code) != 4:
-            print("PIN code must be 4 digits in length")
-            return False
+            error_message = "PIN code must be 4 digits in length"
+            return False, error_message
 
         for digit in new_pin_code:
             if digit.isalpha():
-                print("PIN code must contain only digits")
-                return False
+                error_message = "PIN code must contain only digits"
+                return False, error_message
         
         data = JsonFileTasks(self.file_path).load_data()
         
         if data[personal_id]["pin_code_changed_manually"] == True:
-            print("You can change PIN code only once!")
-            return False
+            error_message = "You can change PIN code only once!"
+            return False, error_message
         
         if Validation.is_valid_email(self.email):
             for personal_id, details in data.items():
@@ -234,8 +227,8 @@ class User():
             data[personal_id]['pin_code'] = new_pin_code
             data[personal_id]["pin_code_changed_manually"] = True
             JsonFileTasks(self.file_path).save_data(data)
-            return True
-        return False
+            return True, "PIN code successfully changed"
+        return False, "Something went wrong"
 
 
 class Account():
