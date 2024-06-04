@@ -232,35 +232,34 @@ class User():
 
 
 class Account():
-    def __init__(self, account_number) -> None:
+    def __init__(self, account_number: str) -> None:
         self.account_number = account_number
         self.account_history_file_path = "Data/accounts_history.json"
         self.data_file_path = "Data/accountsData.json"
         self.data = JsonFileTasks(self.data_file_path).load_data()
         self.number_of_tries = 0
         
-    def get_personal_id_by_account_number(self, acc_number):
+    def get_personal_id_by_account_number(self, acc_number: str) -> str | None:
         if Validation.is_valid_account_number(acc_number):
             for personal_id, details in self.data.items():
                 if details["account_number"] == acc_number:
                     return personal_id
             return None
 
-    def deposit(self, amount):
+    def deposit(self, amount: str | float | int) -> Tuple[bool, str]:
         try:
             amount = float(amount)
         except ValueError as ve:
-            print("Please enter valid amount, Error Msg:", ve)
-            return False
+            error_message = "Please enter valid amount, Error Msg:" + ve
+            return False, error_message
             
         personal_id = self.get_personal_id_by_account_number(self.account_number)
-        if personal_id == False:
-            print("PIE")
-            return False
+        if not personal_id:
+            error_message = "Personal ID Error"
+            return False, error_message
         
         if amount <= 0:
-            print("Insufficient funds")
-            return False
+            return False, "Insufficient funds"
         
         self.data[personal_id]["balance"] += amount
         filling_message = f"Balance was filled with {amount}$, Account - {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}."
@@ -295,24 +294,24 @@ class Account():
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
-        return filling_message
+        return True, filling_message
         
         
-    def withdraw(self, amount, inputted_pin_code):
+    def withdraw(self, amount: str | float | int, inputted_pin_code: str) -> Tuple[bool, str]:
         try:
             amount = abs(float(amount))
         except ValueError as ve:
-            print("Please enter valid amount, Error Msg:", ve)
-            return False
+            error_message = "Please enter valid amount, Error Msg:" + ve
+            return False, error_message
         
         personal_id = self.get_personal_id_by_account_number(self.account_number)
         if not personal_id:
-            print("pID-Err")
-            return False
+            error_message = "Personal ID Error"
+            return False, error_message
         
         if self.data[personal_id]["withdrawal_disabled_date"] == str(Functionalities.current_date()):
-            print("It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!")
-            return False
+            error_message = "It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!"
+            return False, error_message
         else:
             self.data[personal_id]["withdrawal_disabled_date"] = ""
             JsonFileTasks(self.data_file_path).save_data(self.data)
@@ -323,18 +322,17 @@ class Account():
             if self.number_of_tries == 3:
                 self.data[personal_id]["withdrawal_disabled_date"] = str(Functionalities.current_date())
                 JsonFileTasks(self.data_file_path).save_data(self.data)
-                print("It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!")
-                return False
+                error_message = "It seems you have entered wrong pin code few times, you won't be able to make withdrawal for one day!"
+                return False, error_message
             
             self.number_of_tries += 1
-            print("It seems pin code you have entered does not match your pin code. Please double-check and try again.")
-            return False
+            error_message = "It seems pin code you have entered does not match your pin code. Please double-check and try again."
+            return False, error_message
         
         balance = self.data[personal_id]["balance"]
         
         if amount > balance:
-            print("Insufficient funds")
-            return False
+            return False, "Insufficient funds"
         
         balance -= amount
         self.data[personal_id]["balance"] = balance
@@ -371,19 +369,19 @@ class Account():
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
-        return withdrawal_message
+        return True, withdrawal_message
     
     
-    def transfer(self, amount, account_number_to):
+    def transfer(self, amount: str | float | int, account_number_to: str) -> Tuple[bool, str] | Tuple[str, str]:
         try:
             amount = abs(float(amount))
         except ValueError as ve:
-            print("Please enter valid amount, Error Msg:", ve)
-            return False
+            error_message = "Please enter valid amount, Error Msg:" + ve
+            return False, error_message
         
         if account_number_to == self.account_number:
-            print("It seems like account number you entered is your account. Please double-check and try again.")
-            return False
+            error_message = "It seems like account number you entered is your account. Please double-check and try again."
+            return False, error_message
             
         personal_id_acc_from = self.get_personal_id_by_account_number(self.account_number)
         personal_id_acc_to = self.get_personal_id_by_account_number(account_number_to)
@@ -392,19 +390,18 @@ class Account():
         print(personal_id_acc_to)
         
         if not personal_id_acc_from:
-            print("Error")
-            return False
+            error_message = "Error finding account number"
+            return False, error_message
         
         if not personal_id_acc_to:
-            print("Error, finding account number to")
-            return False
+            error_message = "Error, finding account number to"
+            return False, error_message
         
         balance_account_number_from = self.data[personal_id_acc_from]["balance"]
         balance_account_number_to = self.data[personal_id_acc_to]["balance"]
         
         if amount > balance_account_number_from:
-            print("Insufficient funds")
-            return False
+            return False, "Insufficient funds"
         
         transfer_message_acc_to = f"Balance was filled with {amount}$, Account - {account_number_to}, from {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}. Sender: {self.data[personal_id_acc_from]["last_name"]} {self.data[personal_id_acc_from]["first_name"]}"
         transfer_message_acc_from = f"Transfer from {self.account_number} to {account_number_to}, Amount: {amount}$, {Functionalities.current_date()}/{Functionalities.current_time()}. Recipient: {self.data[personal_id_acc_to]["last_name"]} {self.data[personal_id_acc_to]["first_name"]}"
@@ -475,23 +472,23 @@ class Account():
         return transfer_message_acc_from, transfer_message_acc_to
     
     
-    def get_transaction_history(self):
+    def get_transaction_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
         return account_history[self.account_number]["transaction_history"]
     
     
-    def get_balance_filling_history(self):
+    def get_balance_filling_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
         return account_history[self.account_number]["balance_filling_history"]
     
     
-    def get_withdrawal_history(self):
+    def get_withdrawal_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
         return account_history[self.account_number]["withdrawal_history"]
       
       
 class Loan():
-    def __init__(self, amount, account_number, time_period) -> None:
+    def __init__(self, amount: str | float | int, account_number: str, time_period: str) -> None:
         self.annual_interest_rate = 0.08    # 8%
         self.amount = amount
         self.account_number = account_number
@@ -501,17 +498,15 @@ class Loan():
         self.history_file_path = "Data/accounts_history.json"
         
     
-    def interest_rate(self):
+    def interest_rate(self) -> bool | int | float:
         try:
             self.amount = float(self.amount)
-        except ValueError as ve:
-            print("Please enter valid amount, Error Msg:", ve)
+        except ValueError:
             return False
         
         try:
             self.time_period = int(self.time_period)
-        except ValueError as ve:
-            print("Please enter valid time period, Error Msg:", ve)
+        except ValueError:
             return False
         
         if (self.amount <= 0 or self.amount > 100000) or (self.time_period < 6 or self.time_period > 48):
@@ -520,18 +515,18 @@ class Loan():
         return self.amount * self.annual_interest_rate * (self.time_period / 12)
     
     
-    def set_up_loan_details(self):
+    def set_up_loan_details(self) -> Tuple[bool, str]:
         loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
         
         if self.account_number in loan_data and loan_data[self.account_number]["loan_status"] == True:
-            print("It seems you have already got an active loan. Please finish it to be able to take a new loan.")
-            return False
+            error_message = "It seems you have already got an active loan. Please finish it to be able to take a new loan."
+            return False, error_message
         
         interest_rate = self.interest_rate()
         
         if interest_rate == False:
-            print("It seems details you have entered are wrong! Plase double-check ad try again.")
-            return False
+            error_message = "It seems details you have entered are wrong! Plase double-check ad try again."
+            return False, error_message
         
         account_dets = JsonFileTasks(self.data_file_path).load_data()
         history = JsonFileTasks(self.history_file_path).load_data()
@@ -567,14 +562,14 @@ class Loan():
         JsonFileTasks(self.history_file_path).save_data(history)
         JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
         
-        return loan_data
+        return True, "Loan Successfully approved"
     
     
     def pay_monthly_loan(self):
         pass
     
     
-    def check_loan_details(self):
+    def check_loan_details(self) -> dict:
         loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
         return loan_details[self.account_number]
         
@@ -597,27 +592,27 @@ class Validation():
         for char in name_or_surname:
             if char.isdigit():
                 return False
-        
+            
         return True
         
         
-    def is_valid_password(password):
+    def is_valid_password(password: str) -> bool:
         # least 6 chars, max 15 lets say it can be anything special symbols chars or digits, 
         return len(password) >= 6 and len(password) <= 15
     
     
-    def is_valid_email(email):
+    def is_valid_email(email: str) -> bool:
         try:
             # Validate.
             valid = validate_email(email)
             # Update with the normalized form.
             email = valid.email
             return True
-        except EmailNotValidError as e:
+        except EmailNotValidError:
             return False
         
 
-    def is_valid_phone_number(phone_number):
+    def is_valid_phone_number(phone_number: str) -> bool:
         # lets say phone num must be 9 chars in len, no less, no more
         phone_number = phone_number.strip()
         length = len(phone_number)
@@ -635,7 +630,7 @@ class Validation():
         return True
 
 
-    def is_valid_personal_id(personal_id):
+    def is_valid_personal_id(personal_id: str) -> bool:
         # lets say personal ID must be 11 chars in len
         personal_id = personal_id.strip()
         length = len(personal_id)
@@ -653,7 +648,7 @@ class Validation():
         return True
         
 
-    def is_valid_account_number(account_number):
+    def is_valid_account_number(account_number: str) -> bool:
         users = JsonFileTasks(User('','','','','','',).file_path).load_data()
         for user in users.values():
             if account_number == user["account_number"]:
@@ -663,7 +658,7 @@ class Validation():
 
 class Functionalities():
     
-    def generate_account_number():
+    def generate_account_number() -> str:
         # num sample GB0000AB0000A00 max len = 15
         
         chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -693,15 +688,15 @@ class Functionalities():
         return account_number
   
   
-    def generate_pin_code():
+    def generate_pin_code() -> str:
         return str(random.randint(1000, 9999))
       
       
-    def current_date():
+    def current_date() -> datetime:
         return date.today()
     
     
-    def current_time():
+    def current_time() -> str:
         current = datetime.now()
 
         hour = current.hour
@@ -711,7 +706,7 @@ class Functionalities():
         return f"{hour}:{minute}:{sec}"
     
 
-    def add_months(date, months):
+    def add_months(date, months) -> datetime:
         new_month = date.month + months
         new_year = date.year + new_month // 12
         new_month = new_month % 12
@@ -727,10 +722,10 @@ class Functionalities():
   
      
 class JsonFileTasks():
-    def __init__(self, file_path) -> None:
+    def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         
-    def load_data(self):
+    def load_data(self) -> dict:
         try:
             with open(self.file_path, "r") as accounts_data:
                 data = json.load(accounts_data)
@@ -739,6 +734,6 @@ class JsonFileTasks():
             return {}
         
     
-    def save_data(self, data):
+    def save_data(self, data: dict):
         with open(self.file_path, "w") as file:
             json.dump(data, file, indent=4)
