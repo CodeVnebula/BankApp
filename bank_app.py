@@ -294,7 +294,7 @@ class Account():
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
-        return True, filling_message
+        return True, "Successfully filled balance"
         
         
     def withdraw(self, amount: str | float | int, inputted_pin_code: str) -> Tuple[bool, str]:
@@ -369,10 +369,10 @@ class Account():
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
-        return True, withdrawal_message
+        return True, "Successfull withdrawal"
     
     
-    def transfer(self, amount: str | float | int, account_number_to: str) -> Tuple[bool, str] | Tuple[str, str]:
+    def transfer(self, amount: str | float | int, account_number_to: str) -> Tuple[bool, str]:
         try:
             amount = abs(float(amount))
         except ValueError as ve:
@@ -469,7 +469,7 @@ class Account():
         JsonFileTasks(self.account_history_file_path).save_data(history)
         JsonFileTasks(self.data_file_path).save_data(self.data)
         
-        return transfer_message_acc_from, transfer_message_acc_to
+        return True, "Successful transaction!"
     
     
     def get_transaction_history(self) -> list:
@@ -544,7 +544,7 @@ class Loan():
         min_monthly_payment = float(total_repayment) / self.time_period
         min_monthly_payment = "{:.2f}".format(min_monthly_payment)
         
-        loan_message = f"Balance was filled By GB Bank, Account: {self.account_number}. Amount - {self.amount}, {current_date}. (loan)"
+        loan_message = f"Balance was filled By GB Bank, Account: {self.account_number}. Amount - {self.amount}$, {current_date}. (loan)"
         history[self.account_number]["balance_filling_history"].append(loan_message)
         
         loan_data[self.account_number] = {
@@ -553,6 +553,8 @@ class Loan():
             "time_period" : self.time_period,
             "amount_borrowed" : self.amount,
             "total_repayment" : total_repayment,
+            "amount_returned" : 0,
+            "amount_left" : total_repayment,
             "interest_rate" : interest_rate,
             "min_monthly_payment" : min_monthly_payment,
             "loan_status" : True
@@ -571,7 +573,8 @@ class Loan():
     
     def check_loan_details(self) -> dict:
         loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
-        return loan_details[self.account_number]
+        if self.account_number in loan_details and loan_details != None:
+            return loan_details[self.account_number]
         
 
 class Validation():
