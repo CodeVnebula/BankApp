@@ -163,12 +163,19 @@ class User():
         return self.pin_code, self.account_number
      
        
-    def login_verification(self, email: str, password: str) -> bool:
+    def login_verification(self, email: str, password: str) -> Tuple[bool, str]:
         users = JsonFileTasks(self.file_path).load_data()
+        account_found = False
         for user in users.values():
             if user['email'] == email and user['password'] == self.hash_password(password):
-                return True
-        return False
+                return True, "Successfull login"
+            if user['email'] == email:
+                account_found = True
+            
+        if account_found == False:
+            return False, "It seems the account doesn't exist, try creating one before login"
+                
+        return False, "Invalid password. Please try again."
     
    
     def hash_password(self, password: str) -> str:
