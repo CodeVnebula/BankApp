@@ -71,14 +71,15 @@ def handle_registration():
         else:
             pin_code, account_number = result, message
             print(f"Congratulations {first_name}, your bank account has been successfully created!")
-            print(f"    - Account number: {account_number}\n    - Pin code: {pin_code}")
-
+            
             subject = "Account created"
             account_created_message = textwrap.dedent(f"""
                 - Hello {first_name}, your bank account has been successfully created!
                 Account details:
                 - Account number: {account_number}.
                 - PIN code: {pin_code}.
+                You can change your PIN code anytime but only once. We strongly suggest
+                to change PIN code.
                 Please keep this information secure and do not share your PIN code with 
                 anyone.
                 Thank you for choosing our bank. We are excited to have you with us and 
@@ -103,14 +104,19 @@ def handle_login():
         password = input("Password: ")
 
         user = User('', '', '', '', email, password)
-        if user.login_verification(email, password):
-            print("Successful login")
+        result, message = user.login_verification(email, password)
+        if result:
+            print(message)
             handle_account_menu(user)
             return
         else:
-            print("Invalid email or password. Please try again.")
-            wrong_password_input_count += 1
-
+            if message == "Invalid password. Please try again.":
+                wrong_password_input_count += 1
+                print(message)
+            else:
+                print(message)
+                return 
+            
     print("It seems like you forgot your password.")
     forgot_password = input("Do you want to reset it? (y/n): ").lower()
     if forgot_password == 'y':
