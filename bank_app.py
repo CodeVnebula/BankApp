@@ -209,7 +209,7 @@ class User():
         return False, "Something went wrong"
     
     
-    def change_pin_code(self, new_pin_code: str) -> Tuple[bool, str]:
+    def change_pin_code(self, new_pin_code: str, account_number: str) -> Tuple[bool, str]:
         if len(new_pin_code) != 4:
             error_message = "PIN code must be 4 digits in length"
             return False, error_message
@@ -221,7 +221,13 @@ class User():
         
         data = JsonFileTasks(self.file_path).load_data()
         
-        if data[personal_id]["pin_code_changed_manually"] == True:
+        if Validation.is_valid_account_number(account_number):
+            for personal_id, details in data.items():
+                if details["account_number"] == account_number:
+                    personal_id = personal_id
+                    break
+        
+        if data[personal_id]["pin_code_changed_manually"] == True: 
             error_message = "You can change PIN code only once!"
             return False, error_message
         
@@ -257,7 +263,7 @@ class Account():
         try:
             amount = float(amount)
         except ValueError as ve:
-            error_message = "Please enter valid amount, Error Msg:" + ve
+            error_message = "Please enter valid amount, Error Msg:" + str(ve)
             return False, error_message
             
         personal_id = self.get_personal_id_by_account_number(self.account_number)
@@ -308,7 +314,7 @@ class Account():
         try:
             amount = abs(float(amount))
         except ValueError as ve:
-            error_message = "Please enter valid amount, Error Msg:" + ve
+            error_message = "Please enter valid amount, Error Msg:" + str(ve)
             return False, error_message
         
         personal_id = self.get_personal_id_by_account_number(self.account_number)
@@ -383,7 +389,7 @@ class Account():
         try:
             amount = abs(float(amount))
         except ValueError as ve:
-            error_message = "Please enter valid amount, Error Msg:" + ve
+            error_message = "Please enter valid amount, Error Msg:" + str(ve)
             return False, error_message
         
         if account_number_to == self.account_number:
@@ -392,9 +398,6 @@ class Account():
             
         personal_id_acc_from = self.get_personal_id_by_account_number(self.account_number)
         personal_id_acc_to = self.get_personal_id_by_account_number(account_number_to)
-        
-        print(personal_id_acc_from)
-        print(personal_id_acc_to)
         
         if not personal_id_acc_from:
             error_message = "Error finding account number"
@@ -534,6 +537,8 @@ class Loan():
         if interest_rate == False:
             error_message = "It seems details you have entered are wrong! Plase double-check ad try again."
             return False, error_message
+        
+        interest_rate = float("{:.2f}".format(interest_rate))
         
         account_dets = JsonFileTasks(self.data_file_path).load_data()
         history = JsonFileTasks(self.history_file_path).load_data()
