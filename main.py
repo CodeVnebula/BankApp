@@ -6,7 +6,7 @@ from time import sleep
 
 def get_details(data):
     print("_____________ Account Details _____________\n")
-    print(f"Account: {data['account_number']} \nPin-code - {data['pin_code']}\n")
+    print(f"Account: {data['account_number']} \nPIN-code - {data['pin_code']}\n")
     print("User details: ")
     print(f"    - {data['first_name']} {data['last_name']}")
     print("Contact:")
@@ -186,8 +186,11 @@ def handle_account_menu(user):
         elif choice == "7":
             handle_loan_options(account)
         elif choice == "8":
-            manage_account(user)
+            manage_account(user, account_number)
         elif choice == "9":
+            print("Logging out!")
+            sleep(2)
+            system("cls")
             break
         else:
             print("Invalid choice. Please try again.")
@@ -228,8 +231,7 @@ def handle_loan_options(account):
         print(loan.set_up_loan_details()[1])
             
     elif choice == "2":
-        # Implement loan payment functionality here
-        pass
+        print("This option isnt avilable at the moment")
     elif choice == "3":
         loan = Loan(0, account.account_number, "")
         display_loan_details(loan.check_loan_details())
@@ -237,22 +239,21 @@ def handle_loan_options(account):
         print("Invalid choice. Please try again.")
 
 
-def manage_account(user):
+def manage_account(user, account_number):
     print("_____ Account Management _____\n")
     print("1. Change password")
     print("2. Change PIN code")
     print("3. Deactivate Account")
 
-    user_choice = input(">>")
-
+    user_choice = input(">> ")
+    
+    
     if user_choice == "1":
         reset_password()
     elif user_choice == "2":
         new_pin = input("Enter new PIN code: ")
-        if user.change_pin_code(new_pin):
-            print("PIN code successfully changed!")
-        else:
-            print("Failed to change PIN code.")
+        _, message = user.change_pin_code(new_pin, account_number)
+        print(message)
     elif user_choice == "3":
         # if user.deactivate_account():
         #     print("Account successfully deactivated!")
