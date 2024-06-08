@@ -9,6 +9,28 @@ import ssl
 import smtplib
 import textwrap
 from typing import Tuple
+import socket
+
+class Internet():
+    def is_connected(host="8.8.8.8", port=53, timeout=3):
+        """
+        Checks if the computer is connected to the internet.
+        
+        Parameters:
+        host (str): The host to connect to. Default is Google's DNS server.
+        port (int): The port to connect to. Default is 53.
+        timeout (int): The connection timeout duration. Default is 3 seconds.
+
+        Returns:
+        bool: True if the computer is connected to the internet, False otherwise.
+        """
+        try:
+            socket.setdefaulttimeout(timeout)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            return True
+        except OSError:
+            return False
+        
 
 class Email():
     def __init__(self, email_account_to: str) -> None:
@@ -17,6 +39,9 @@ class Email():
         
     
     def send_email(self, subject: str, email_body: str) -> Tuple[bool, str]:
+        if not Internet.is_connected():
+            return False, "It seems you are not connected to internet or your connection is poor. Please try again when connection is back!"
+        
         if not Validation.is_valid_email(self.email_account_to):
             return False, "Oops! It seems the email you entered is invalid. Please double-check and try again."
         
@@ -156,7 +181,8 @@ class User():
                 "account_number" : self.account_number,
                 "account_creation_date" : str(self.account_creation_date),
                 "balance" : 0.0,
-                "withdrawal_disabled_date" : ""
+                "withdrawal_disabled_date" : "",
+                "pin_code_changed_manually" : False
             } 
 
         JsonFileTasks(self.file_path).save_data(data)
@@ -215,7 +241,7 @@ class User():
             return False, error_message
 
         for digit in new_pin_code:
-            if digit.isalpha():
+            if not digit.isdigit():
                 error_message = "PIN code must contain only digits"
                 return False, error_message
         
@@ -557,7 +583,18 @@ class Loan():
         min_monthly_payment = "{:.2f}".format(min_monthly_payment)
         
         loan_message = f"Balance was filled By GB Bank, Account: {self.account_number}. Amount - {self.amount}$, {current_date}. (loan)"
-        history[self.account_number]["balance_filling_history"].append(loan_message)
+        
+        if self.account_number not in history:
+            history[self.account_number] = {
+                "balance_filling_history" : [loan_message],
+                "transaction_history" : [],
+                "withdrawal_history" : []
+            }
+        else:
+            history[self.account_number]["balance_filling_history"].append(loan_message)
+        
+        next_payment_date = Functionalities.add_months(current_date, 1)
+        next_payment_date = str(next_payment_date).split(" ")[0]
         
         loan_data[self.account_number] = {
             "loan_approved_date" : str(current_date) + " 00:00:00",
@@ -569,7 +606,9 @@ class Loan():
             "amount_left" : total_repayment,
             "interest_rate" : interest_rate,
             "min_monthly_payment" : min_monthly_payment,
-            "loan_status" : True
+            "loan_status" : True,
+            "dates_paid" : [],
+            "next_payment_date" : next_payment_date
         }
         
         JsonFileTasks(self.data_file_path).save_data(account_dets)
@@ -580,8 +619,42 @@ class Loan():
     
     
     def pay_monthly_loan(self):
-        pass
+        loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
+        
+        if self.account_number not in loan_data:
+            error_message = "It seems you have not got an active loan. Please double check details and try again later."
+            return False, error_message
+        
+        try:
+            self.amount = float(self.amount)
+        except ValueError:
+            return False, "It seems amount you entered is not valid. Please double check and try again."
+         
+        # need to add some logic for payment dates
+        
+        min_monthly_payment = float(loan_data[self.account_number]["min_monthly_payment"])
+        if self.amount < min_monthly_payment:
+            error_message = f"You can't pay less than {min_monthly_payment}. Please try again or view your loan details."
+            return False, error_message
     
+        account_details = JsonFileTasks(self.data_file_path).load_data()
+        personal_id = Account(self.account_number).get_personal_id_by_account_number(self.account_number)
+        
+        if account_details[personal_id]["balance"] < self.amount:
+            return False, "It seems you don't have enough balance. Fill it before trying."
+        
+        account_details[personal_id]["balance"] -= self.amount
+        
+        loan_data[self.account_number]["amount_returned"] += self.amount
+        amount_left_to_pay = float(loan_data[self.account_number]["amount_left"]) - self.amount
+        loan_data[self.account_number]["amount_left"] = str(amount_left_to_pay)
+        
+        loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{self.amount}$"})
+        
+        JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
+        JsonFileTasks(self.data_file_path).save_data(account_details)
+        
+        
     
     def check_loan_details(self) -> dict:
         loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
