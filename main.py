@@ -231,7 +231,10 @@ def handle_loan_options(account):
         print(loan.set_up_loan_details()[1])
             
     elif choice == "2":
-        print("This option isnt avilable at the moment")
+        amount = input("Loan amount: ")
+        loan = Loan(amount=amount, account_number=account.account_number, time_period="")
+        print(loan.pay_monthly_loan())
+        
     elif choice == "3":
         loan = Loan(0, account.account_number, "")
         display_loan_details(loan.check_loan_details())
