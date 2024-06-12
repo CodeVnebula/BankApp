@@ -625,6 +625,9 @@ class Loan():
             error_message = "It seems you have not got an active loan. Please double check details and try again later."
             return False, error_message
         
+        if loan_data[self.account_number]["loan_status"] == False:
+            return False, "It seems your loan is not active anymore. "
+        
         try:
             self.amount = float(self.amount)
         except ValueError:
@@ -640,6 +643,26 @@ class Loan():
         account_details = JsonFileTasks(self.data_file_path).load_data()
         personal_id = Account(self.account_number).get_personal_id_by_account_number(self.account_number)
         
+        if self.amount > float(loan_data[self.account_number]["amount_left"]):
+            if account_details[personal_id]["balance"] < self.amount:
+                return False, "It seems you don't have enough balance. Fill it before trying."
+        
+            account_details[personal_id]["balance"] -= float(loan_data[self.account_number]["amount_left"])
+            
+            loan_data[self.account_number]["loan_status"] = False
+            loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{self.amount}$"})
+            loan_data[self.account_number]["amount_left"] = 0
+            loan_data[self.account_number]["amount_returned"] = loan_data[self.account_number]["total_repayment"]
+            JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
+            JsonFileTasks(self.data_file_path).save_data(account_details)
+            return True, "ASd"
+            
+        if float(loan_data[self.account_number]["amount_left"]) == 0:
+            loan_data[self.account_number]["loan_status"] = False
+            JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
+            JsonFileTasks(self.data_file_path).save_data(account_details)
+            return False, "You finished paying for your loan."
+        
         if account_details[personal_id]["balance"] < self.amount:
             return False, "It seems you don't have enough balance. Fill it before trying."
         
@@ -653,7 +676,7 @@ class Loan():
         
         JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
         JsonFileTasks(self.data_file_path).save_data(account_details)
-        
+        return True
         
     
     def check_loan_details(self) -> dict:
