@@ -236,6 +236,24 @@ class User():
     
     
     def change_pin_code(self, new_pin_code: str, account_number: str) -> Tuple[bool, str]:
+        data = JsonFileTasks(self.file_path).load_data()
+
+        if Validation.is_valid_account_number(account_number):
+            for personal_id, details in data.items():
+                if details["account_number"] == account_number:
+                    personal_id = personal_id
+                    break
+        
+        if Validation.is_valid_email(self.email):
+            for personal_id, details in data.items():
+                if details["email"] == self.email:
+                    personal_id = personal_id
+                    break
+                
+        if data[personal_id]["pin_code_changed_manually"] == True: 
+            error_message = "It seems you have already changed PIN code. You can change PIN code only once!"
+            return False, error_message
+        
         if len(new_pin_code) != 4:
             error_message = "PIN code must be 4 digits in length"
             return False, error_message
@@ -244,24 +262,6 @@ class User():
             if not digit.isdigit():
                 error_message = "PIN code must contain only digits"
                 return False, error_message
-        
-        data = JsonFileTasks(self.file_path).load_data()
-        
-        if Validation.is_valid_account_number(account_number):
-            for personal_id, details in data.items():
-                if details["account_number"] == account_number:
-                    personal_id = personal_id
-                    break
-        
-        if data[personal_id]["pin_code_changed_manually"] == True: 
-            error_message = "You can change PIN code only once!"
-            return False, error_message
-        
-        if Validation.is_valid_email(self.email):
-            for personal_id, details in data.items():
-                if details["email"] == self.email:
-                    personal_id = personal_id
-                    break
         
             data[personal_id]['pin_code'] = new_pin_code
             data[personal_id]["pin_code_changed_manually"] = True
@@ -299,6 +299,9 @@ class Account():
         
         if amount <= 0:
             return False, "Insufficient funds"
+        
+        if amount > 100000:
+            return False, "You can not deposit more than 100'000 at once"
         
         self.data[personal_id]["balance"] += amount
         filling_message = f"Balance was filled with {amount}$, Account - {self.account_number}, {Functionalities.current_date()}/{Functionalities.current_time()}."
@@ -372,6 +375,9 @@ class Account():
         
         if amount > balance:
             return False, "Insufficient funds"
+        
+        if amount > 5000:
+            return False, "You can not withdraw more than 5000$ at once"
         
         balance -= amount
         self.data[personal_id]["balance"] = balance
