@@ -24,7 +24,7 @@ def display_history(history_data, hist_of=""):
     print()
 
 
-def display_loan_details(loan_details):
+def display_loan_details(loan, loan_details):
     if loan_details == None:
         print("No loan details for this account")
         return
@@ -40,6 +40,12 @@ def display_loan_details(loan_details):
     print(f"   - Amount left to pay: {loan_details["amount_left"]}")
     print(f"   - Loan active status: {"active" if loan_details["loan_status"] else "not active"}")
     
+    print("\nSee when you paid? (y/n) ")
+    choice = input(">> ")
+    if choice == 'y':
+        display_loan_payment_dates(loan.get_loan_payment_dates())
+    else:
+        print("Quiting...")
 
 def handle_registration():
     print("\n___________ Registration ___________\n")
@@ -225,22 +231,37 @@ def handle_loan_options(account):
 
     choice = input(">> ")
     if choice == "1":
-        amount = input("Loan amount: ")
+        amount = input("Loan amount max(100'000$ at once): ")
         time_period = input("Time period 'months', min-6 months, max-48: ")
         loan = Loan(amount=amount, account_number=account.account_number, time_period=time_period)
         print(loan.set_up_loan_details()[1])
             
     elif choice == "2":
-        amount = input("Loan amount: ")
+        amount = input("Amount to return: ")
         loan = Loan(amount=amount, account_number=account.account_number, time_period="")
-        print(loan.pay_monthly_loan())
+        print(loan.pay_monthly_loan()[1])
         
     elif choice == "3":
         loan = Loan(0, account.account_number, "")
-        display_loan_details(loan.check_loan_details())
+        display_loan_details(loan, loan.check_loan_details()[1])
+        
     else:
         print("Invalid choice. Please try again.")
 
+def display_loan_payment_dates(payment_data: list):
+    if payment_data is None or len(payment_data) == 0:
+        print("No payment data yet.")
+        return
+    print("______ Dates When You Paid ______")
+    print(" _______________________")
+    print("|    Date    |  Amount  |")
+    print(" -----------------------")
+    
+    for entry in payment_data:
+        for date, amount in entry.items():
+            print(f"| {date} | {amount}{(9 - len(amount)) * ' '}|")
+    
+    print(" -----------------------")
 
 def manage_account(user, account_number):
     print("_____ Account Management _____\n")
@@ -258,11 +279,24 @@ def manage_account(user, account_number):
         _, message = user.change_pin_code(new_pin, account_number)
         print(message)
     elif user_choice == "3":
-        # if user.deactivate_account():
-        #     print("Account successfully deactivated!")
-        # else:
-        #     print("Failed to deactivate account.")
-        print("This option isn't avilable at the moment")
+        print("Are you sure you want to deactivate your account? (y/n)")
+        choice = input(">> ")
+        
+        if choice == "y":
+            email = input("Enter your email: ")
+            verification_code = Email(email).verification_code()
+            subject = "Account deactivation"
+            body = f"your account deactivation verification code is {verification_code}"
+            result, message = Email(email).send_email(subject, body)
+            if result:
+                user_input = input("Enter the 6 digit verification code: ")
+                if user_input == verification_code:
+                    print(user.deactivate_account()[1])
+                    main()
+                else:
+                    print("Incorrect verification code. Try again later!")
+        elif choice == "n":
+            print("Quitting!")
     else:
         print("Invalid choice. Please try again.")
 
