@@ -603,7 +603,7 @@ class Loan():
         next_payment_date = str(next_payment_date).split(" ")[0]
         
         loan_data[self.account_number] = {
-            "loan_approved_date" : str(current_date) + " 00:00:00",
+            "loan_approved_date" : str(current_date),
             "loan_expires_date" : str(last_date),
             "time_period" : self.time_period,
             "amount_borrowed" : self.amount,
@@ -614,7 +614,8 @@ class Loan():
             "min_monthly_payment" : min_monthly_payment,
             "loan_status" : True,
             "dates_paid" : [],
-            "next_payment_date" : next_payment_date
+            "next_payment_date" : next_payment_date,
+            "amount_paid_in_current_month" : 0
         }
         
         JsonFileTasks(self.data_file_path).save_data(account_dets)
@@ -623,6 +624,7 @@ class Loan():
         
         return True, "Loan Successfully approved"
     
+    # do u have any imporvements for pay_monthly_loan(self) function?
     
     def pay_monthly_loan(self):
         loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
@@ -632,64 +634,92 @@ class Loan():
             return False, error_message
         
         if loan_data[self.account_number]["loan_status"] == False:
-            return False, "It seems your loan is not active anymore. "
+            return False, "It seems your loan is not active anymore."
         
         try:
             self.amount = float(self.amount)
         except ValueError:
             return False, "It seems amount you entered is not valid. Please double check and try again."
-         
-        # need to add some logic for payment dates
         
         min_monthly_payment = float(loan_data[self.account_number]["min_monthly_payment"])
-        if self.amount < min_monthly_payment:
-            error_message = f"You can't pay less than {min_monthly_payment}. Please try again or view your loan details."
-            return False, error_message
-    
+        amount_paid_in_current_month = float(loan_data[self.account_number]["amount_paid_in_current_month"])
+        
         account_details = JsonFileTasks(self.data_file_path).load_data()
         personal_id = Account(self.account_number).get_personal_id_by_account_number(self.account_number)
         
-        if self.amount > float(loan_data[self.account_number]["amount_left"]):
+        if self.amount >= float(loan_data[self.account_number]["amount_left"]):
             if account_details[personal_id]["balance"] < self.amount:
                 return False, "It seems you don't have enough balance. Fill it before trying."
         
             account_details[personal_id]["balance"] -= float(loan_data[self.account_number]["amount_left"])
             
             loan_data[self.account_number]["loan_status"] = False
-            loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{self.amount}$"})
+            loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{float(loan_data[self.account_number]["amount_left"])}$"})
             loan_data[self.account_number]["amount_left"] = 0
             loan_data[self.account_number]["amount_returned"] = loan_data[self.account_number]["total_repayment"]
             JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
             JsonFileTasks(self.data_file_path).save_data(account_details)
-            return True, "ASd"
+            return True, "You finished paying for your loan."
             
         if float(loan_data[self.account_number]["amount_left"]) == 0:
             loan_data[self.account_number]["loan_status"] = False
+            loan_data[self.account_number]["next_payment_date"] = "--/--/--"
             JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
             JsonFileTasks(self.data_file_path).save_data(account_details)
-            return False, "You finished paying for your loan."
+            return True, "You finished paying for your loan."
         
         if account_details[personal_id]["balance"] < self.amount:
             return False, "It seems you don't have enough balance. Fill it before trying."
         
-        account_details[personal_id]["balance"] -= self.amount
+        current_date = str(Functionalities.current_date())
+        next_payment_date = loan_data[self.account_number]["next_payment_date"]
+        bigger_date = Functionalities.compare_dates(current_date, next_payment_date)
         
+        if bigger_date == 1: 
+            if amount_paid_in_current_month < min_monthly_payment:
+                loan_data[self.account_number]["amount_left"] = str(float(loan_data[self.account_number]["amount_left"]) + (0.1 * min_monthly_payment))
+            
+                subject = "Loan payment"
+                body = textwrap.dedent(f"""
+                    It seems you have not paid the minimum monthly payment for your loan in last month.
+                    because of that we have added 10% of the minimum monthly payment to total amount you 
+                    have to pay.
+                    
+                    Please try not to be late next time.
+                    
+                    GB Bank """
+                )
+                email = Email(account_details[personal_id]["email"])
+                email.send_email(subject, body)
+            loan_data[self.account_number]["next_payment_date"] = str(Functionalities.add_months(next_payment_date, 1))
+            
+            loan_data[self.account_number]["amount_paid_in_current_month"] = 0
+            return self.payment_task(account_details, personal_id, loan_data)
+            
+        return self.payment_task(account_details, personal_id, loan_data)
+        
+        
+    def payment_task(self, account_details, personal_id, loan_data):
+        account_details[personal_id]["balance"] -= self.amount
         loan_data[self.account_number]["amount_returned"] += self.amount
         amount_left_to_pay = float(loan_data[self.account_number]["amount_left"]) - self.amount
         loan_data[self.account_number]["amount_left"] = str(amount_left_to_pay)
-        
+        loan_data[self.account_number]["amount_paid_in_current_month"] += self.amount
         loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{self.amount}$"})
-        
-        JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
         JsonFileTasks(self.data_file_path).save_data(account_details)
-        return True
-        
+        JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
+        return True, "You successfully paid for your loan."
     
     def check_loan_details(self) -> dict:
         loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
         if self.account_number in loan_details and loan_details != None:
             return loan_details[self.account_number]
+    
         
+    def get_loan_payment_dates(self) -> list:
+        loan_details = JsonFileTasks(self.loan_data_file_path).load_data()
+        if self.account_number in loan_details and loan_details != None:
+            return loan_details[self.account_number]["dates_paid"]
 
 class Validation():
     
@@ -824,6 +854,7 @@ class Functionalities():
     
 
     def add_months(date, months) -> datetime:
+        date = datetime.strptime(str(date), "%Y-%m-%d").date()
         new_month = date.month + months
         new_year = date.year + new_month // 12
         new_month = new_month % 12
@@ -832,11 +863,23 @@ class Functionalities():
             new_month = 12
             new_year -= 1
 
-        last_day_of_new_month = (datetime(new_year, new_month + 1, 1) - timedelta(days=1)).day
+        last_day_of_new_month = (datetime(new_year, new_month, 1) - timedelta(days=1)).day
         new_day = min(date.day, last_day_of_new_month)
 
-        return datetime(new_year, new_month, new_day)
+        return datetime(new_year, new_month, new_day).date()
   
+    
+    def compare_dates(date1, date2):    
+    
+        date1 = date1.split("-")
+        date2 = date2.split("-")
+        
+        for i in range(0, 3):
+            if int(date1[i]) > int(date2[i]):
+                return 1
+            elif int(date1[i]) < int(date2[i]):
+                return -1
+        return 0
      
 class JsonFileTasks():
     def __init__(self, file_path: str) -> None:
@@ -846,8 +889,8 @@ class JsonFileTasks():
         try:
             with open(self.file_path, "r") as accounts_data:
                 data = json.load(accounts_data)
-                return data
-        except FileNotFoundError:
+                return data if len(data) >= 1 else {}
+        except Exception:
             return {}
         
     
