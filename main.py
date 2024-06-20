@@ -279,24 +279,25 @@ def manage_account(user, account_number):
         _, message = user.change_pin_code(new_pin, account_number)
         print(message)
     elif user_choice == "3":
-        print("Are you sure you want to deactivate your account? (y/n)")
-        choice = input(">> ")
+        # print("Are you sure you want to deactivate your account? (y/n)")
+        # choice = input(">> ")
         
-        if choice == "y":
-            email = input("Enter your email: ")
-            verification_code = Email(email).verification_code()
-            subject = "Account deactivation"
-            body = f"your account deactivation verification code is {verification_code}"
-            result, message = Email(email).send_email(subject, body)
-            if result:
-                user_input = input("Enter the 6 digit verification code: ")
-                if user_input == verification_code:
-                    print(user.deactivate_account()[1])
-                    main()
-                else:
-                    print("Incorrect verification code. Try again later!")
-        elif choice == "n":
-            print("Quitting!")
+        # if choice == "y":
+        #     email = input("Enter your email: ")
+        #     verification_code = Email(email).verification_code()
+        #     subject = "Account deactivation"
+        #     body = f"your account deactivation verification code is {verification_code}"
+        #     result, message = Email(email).send_email(subject, body)
+        #     if result:
+        #         user_input = input("Enter the 6 digit verification code: ")
+        #         if user_input == verification_code:
+        #             print(user.deactivate_account()[1])
+        #             main()
+        #         else:
+        #             print("Incorrect verification code. Try again later!")
+        # elif choice == "n":
+        #     print("Quitting!")
+        print("This option is not avilable at the moment")
     else:
         print("Invalid choice. Please try again.")
 

@@ -897,3 +897,4 @@ class JsonFileTasks():
     def save_data(self, data: dict):
         with open(self.file_path, "w") as file:
             json.dump(data, file, indent=4)
+            
