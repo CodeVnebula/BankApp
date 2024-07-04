@@ -38,6 +38,7 @@ def display_loan_details(loan, loan_details):
     print(f"   - Minimum monthly payment: {loan_details["min_monthly_payment"]}")
     print(f"   - Returned amount: {loan_details["amount_returned"]}")
     print(f"   - Amount left to pay: {loan_details["amount_left"]}")
+    print(f"   - Next payment date: {loan_details["next_payment_date"]}")
     print(f"   - Loan active status: {"active" if loan_details["loan_status"] else "not active"}")
     
     print("\nSee when you paid? (y/n) ")
@@ -243,7 +244,7 @@ def handle_loan_options(account):
         
     elif choice == "3":
         loan = Loan(0, account.account_number, "")
-        display_loan_details(loan, loan.check_loan_details()[1])
+        display_loan_details(loan, loan.check_loan_details())
         
     else:
         print("Invalid choice. Please try again.")
@@ -271,7 +272,6 @@ def manage_account(user, account_number):
 
     user_choice = input(">> ")
     
-    
     if user_choice == "1":
         reset_password()
     elif user_choice == "2":
@@ -279,31 +279,33 @@ def manage_account(user, account_number):
         _, message = user.change_pin_code(new_pin, account_number)
         print(message)
     elif user_choice == "3":
-        # print("Are you sure you want to deactivate your account? (y/n)")
-        # choice = input(">> ")
+        print("Are you sure you want to deactivate your account? (y/n)")
+        choice = input(">> ").lower()
         
-        # if choice == "y":
-        #     email = input("Enter your email: ")
-        #     verification_code = Email(email).verification_code()
-        #     subject = "Account deactivation"
-        #     body = f"your account deactivation verification code is {verification_code}"
-        #     result, message = Email(email).send_email(subject, body)
-        #     if result:
-        #         user_input = input("Enter the 6 digit verification code: ")
-        #         if user_input == verification_code:
-        #             print(user.deactivate_account()[1])
-        #             main()
-        #         else:
-        #             print("Incorrect verification code. Try again later!")
-        # elif choice == "n":
-        #     print("Quitting!")
-        print("This option is not avilable at the moment")
+        if choice == "y":
+            email = input("Enter your email: ")
+            verification_code = Email(email).verification_code()
+            subject = "Account deactivation"
+            body = f"your account deactivation verification code is {verification_code}"
+            result, message = Email(email).send_email(subject, body)
+            if result:
+                user_input = input("Enter the 6 digit verification code: ")
+                if user_input == verification_code:
+                    print(user.deactivate_account()[1])
+                    main()
+                else:
+                    print("Incorrect verification code. Try again later!")
+            else:
+                print(message)
+        elif choice == "n":
+            print("Quitting!")
     else:
         print("Invalid choice. Please try again.")
 
 
 def main():
     print("\n_________________ Bank App _________________\n")
+    
     while True:
         print("1. Create a bank account")
         print("2. Login")
