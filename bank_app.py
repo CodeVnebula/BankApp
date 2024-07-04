@@ -269,6 +269,46 @@ class User():
             return True, "PIN code successfully changed"
         return False, "Something went wrong"
 
+    
+    def deactivate_account(self):
+        data = JsonFileTasks(self.file_path).load_data()
+        account_history = JsonFileTasks("Data/accounts_history.json").load_data()
+        loan_data = JsonFileTasks("Data/loan_data.json").load_data()
+        
+        for personal_id, details in data.items():
+            if details["email"] == self.email:
+                personal_id = personal_id
+                break
+        
+        subject = "Account deactivation"
+        account_deactivated_msg_body = textwrap.dedent(f"""
+        Hi {details["first_name"]},
+        Your account has been successfully deactivated. We are sorry 
+        to see you go. If you have any feedback, please let us know.
+        For any questions, please contact us at this email address or 
+        you can visit us at our office.
+        
+        If you had any balance in your account, you can take it from
+        our nearest branch. If you have any active loans, we can discuss
+        the payment plan and details.
+        
+        Thank you for being with us.
+        Your Bank team.""")
+        
+        Email(self.email).send_email(subject, account_deactivated_msg_body)
+        
+        data.pop(personal_id)
+        if details["account_number"] in account_history:
+            account_history.pop(details["account_number"])
+            JsonFileTasks("Data/accounts_history.json").save_data(account_history)
+        
+        if details["account_number"] in loan_data:
+            loan_data.pop(details["account_number"])
+            JsonFileTasks("Data/loan_data.json").save_data(loan_data)
+            
+        JsonFileTasks(self.file_path).save_data(data)
+        
+        return True, "Account successfully deactivated"
 
 class Account():
     def __init__(self, account_number: str) -> None:
@@ -516,16 +556,22 @@ class Account():
     
     def get_transaction_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
-        return account_history[self.account_number]["transaction_history"]
+        if self.account_number in account_history:
+            return account_history[self.account_number]["transaction_history"]
+        return []
     
     
     def get_balance_filling_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
+        if self.account_number not in account_history:
+            return []
         return account_history[self.account_number]["balance_filling_history"]
     
     
     def get_withdrawal_history(self) -> list:
         account_history = JsonFileTasks(self.account_history_file_path).load_data()
+        if self.account_number not in account_history:
+            return []
         return account_history[self.account_number]["withdrawal_history"]
       
       
@@ -624,7 +670,6 @@ class Loan():
         
         return True, "Loan Successfully approved"
     
-    # do u have any imporvements for pay_monthly_loan(self) function?
     
     def pay_monthly_loan(self):
         loan_data = JsonFileTasks(self.loan_data_file_path).load_data()
@@ -657,6 +702,7 @@ class Loan():
             loan_data[self.account_number]["dates_paid"].append({str(Functionalities.current_date()) : f"{float(loan_data[self.account_number]["amount_left"])}$"})
             loan_data[self.account_number]["amount_left"] = 0
             loan_data[self.account_number]["amount_returned"] = loan_data[self.account_number]["total_repayment"]
+            loan_data[self.account_number]["next_payment_date"] = "--/--/--"
             JsonFileTasks(self.loan_data_file_path).save_data(loan_data)
             JsonFileTasks(self.data_file_path).save_data(account_details)
             return True, "You finished paying for your loan."
@@ -687,10 +733,11 @@ class Loan():
                     
                     Please try not to be late next time.
                     
-                    GB Bank """
+                    Your Bank team"""
                 )
                 email = Email(account_details[personal_id]["email"])
                 email.send_email(subject, body)
+                
             loan_data[self.account_number]["next_payment_date"] = str(Functionalities.add_months(next_payment_date, 1))
             
             loan_data[self.account_number]["amount_paid_in_current_month"] = 0
@@ -700,6 +747,7 @@ class Loan():
         
         
     def payment_task(self, account_details, personal_id, loan_data):
+        self.amount = abs(self.amount)
         account_details[personal_id]["balance"] -= self.amount
         loan_data[self.account_number]["amount_returned"] += self.amount
         amount_left_to_pay = float(loan_data[self.account_number]["amount_left"]) - self.amount
@@ -895,6 +943,9 @@ class JsonFileTasks():
         
     
     def save_data(self, data: dict):
-        with open(self.file_path, "w") as file:
-            json.dump(data, file, indent=4)
-            
+        try:
+            with open(self.file_path, "w") as file:
+                json.dump(data, file, indent=4)
+        except:
+            with open(self.file_path, "r") as file:
+                json.dump({}, file, indent=4)
